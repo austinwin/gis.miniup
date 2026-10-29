@@ -1661,6 +1661,8 @@
       state.data=data;
       state.children=childrenFor(data,url);
       if(window.GISEnhancements)window.GISEnhancements.afterNavigate(url,data);
+      // Record successful visits by server root, not by individual layer URL.
+      if(!options.skipServerHistory && window.GISServerHistory)window.GISServerHistory.noteVisit(url);
       status('Connected','ok');
       // Display selected resource immediately. Parent branches load in parallel.
       renderIntro();renderStats();renderCrumbs();renderTabs();renderContent();
@@ -1784,6 +1786,10 @@
 
   setupSidebarResize();
   attachAuthUI();
+  if(window.GISServerHistory)window.GISServerHistory.setup({
+    normalize:normalize,rootOf:rootOf,navigate:navigate,
+    getCurrent:function(){return state.url||$('urlInput').value;}
+  });
   // Handle the full-page mobile OAuth callback without retaining a code in the URL.
   (function(){
     var q=new URLSearchParams(location.search),code=q.get('arcgis_code'),nonce=q.get('arcgis_state');
@@ -1804,5 +1810,6 @@
   var initial = EXAMPLE;
   if (location.hash.length > 1) { try { initial = decodeURIComponent(location.hash.slice(1)); } catch (e) {} }
   $('urlInput').value = initial;
-  navigate(initial, {noHistory: true});
+  // The automatic demo on an empty URL is not a user-visited server.
+  navigate(initial, {noHistory: true, skipServerHistory: location.hash.length <= 1});
 })();
