@@ -590,25 +590,41 @@
   }
   function renderIntro() {
     var d = state.data || {}, type = resourceType(state.url);
-    $('eyebrow').textContent = (type === 'root' ? 'ARCGIS REST DIRECTORY' : kindFor(d, state.url).toUpperCase() + ' RESOURCE');
-    $('pageTitle').textContent = titleFor(d, state.url);
-    $('pageDescription').textContent = short(d.description || d.serviceDescription || d.mapName || state.url, 200);
-    $('introIcon').textContent = iconFor(type === 'root' ? 'service' : type);
-    var host = clear($('introTools'));
-    if(queryCapable())host.appendChild(btn('▤ Explore data','action-button',function(){setTab('data');}));
+    var resourceLabel=type==='root'?'Directory':type==='service'?'Service':kindFor(d,state.url);
+    $('eyebrow').textContent=resourceLabel;
+    $('pageTitle').textContent=titleFor(d,state.url);
+    var description=String(d.description || d.serviceDescription || d.mapName || state.url || '');
+    $('pageDescription').textContent=description;
+    $('pageDescription').title=description;
+    $('introIcon').textContent=iconFor(type==='root'?'service':type);
+    var host=clear($('introTools'));
+    // Data and Export remain in the tabs. Keep only the high-value shortcuts here.
     if(fullExportCapable())host.appendChild(btn('↓ Export','action-button',function(){setTab('export');}));
     if(window.GISEnhancements)window.GISEnhancements.renderIntro(host);
-    append(host, btn('↗ API JSON', 'action-button', function () { window.open(jsonUrl(state.url), '_blank', 'noopener,noreferrer'); }), btn('⟳ Refresh', 'action-button', function () { navigate(state.url, {refresh: true, noHistory: true}); }));
+    var json=btn('↗ JSON','action-button',function(){window.open(jsonUrl(state.url),'_blank','noopener,noreferrer');});
+    json.title='View ArcGIS REST JSON';
+    var refresh=btn('⟳ Refresh','action-button',function(){navigate(state.url,{refresh:true,noHistory:true});});
+    refresh.title='Reload this ArcGIS resource';
+    append(host,json,refresh);
   }
   function stats() {
     var d = state.data || {}, type = resourceType(state.url);
     if (type === 'folder' || type === 'root') return [
-      ['Folders', (d.folders || []).length, 'Available directories'],['Services', (d.services || []).length, 'Published endpoints'],['Version', d.currentVersion || '—', 'ArcGIS Server'],['Access', 'Public', 'Metadata requests']
+      ['Folders', (d.folders || []).length, 'Available directories'],['Services', (d.services || []).length, 'Published endpoints'],['Version', d.currentVersion || '—', 'ArcGIS Server'],['Access', 'By server', 'Permissions determined by the ArcGIS server']
     ];
     if (type === 'service') return [['Layers', (d.layers || []).length, 'Map / feature layers'],['Tables', (d.tables || []).length, 'Nonspatial tables'],['Version', d.currentVersion || '—', 'ArcGIS Server'],['Capabilities', short(d.capabilities || '—', 23), 'Service operations']];
     return [['Layer ID', d.id === undefined ? '—' : d.id, 'Resource identifier'],['Fields', (d.fields || []).length, 'Schema columns'],['Geometry', short((d.geometryType || d.type || '—').replace('esriGeometry', ''), 18), 'Layer structure'],['Max records', d.maxRecordCount || '—', 'Server limit']];
   }
-  function renderStats() { var host = clear($('statGrid')); stats().forEach(function (s) { var c = el('div', 'stat'); append(c, el('div', 'stat-label', s[0]), el('div', 'stat-value', formatNum(s[1])), el('div', 'stat-foot', s[2])); host.appendChild(c); }); }
+  function renderStats() {
+    var host=clear($('statGrid'));
+    stats().forEach(function(s){
+      var c=el('div','stat'), value=formatNum(s[1]);
+      c.title=s[2];
+      c.setAttribute('aria-label',s[0]+': '+value+'. '+s[2]);
+      append(c,el('span','stat-label',s[0]),el('strong','stat-value',value));
+      host.appendChild(c);
+    });
+  }
   function mapCapable() { return /\/MapServer(\/\d+)?$/i.test(new URL(state.url).pathname) || /\/FeatureServer\/\d+$/i.test(new URL(state.url).pathname); }
   function queryCapable() { var d = state.data || {}; return resourceType(state.url) === 'layer' && d.type !== 'Group Layer' && (Array.isArray(d.fields) || Boolean(d.advancedQueryCapabilities)); }
 
