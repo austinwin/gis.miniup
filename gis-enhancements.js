@@ -630,30 +630,68 @@ function setupExtras(){
      panel=document.getElementById('gisFavoritePanel');
  if(!fav||!field||!panel)return;
  searchWired=true;
+ panel.setAttribute('role','region');
+ panel.setAttribute('aria-label','Saved and recently viewed ArcGIS resources');
+
  field.addEventListener('change',()=>{
    var c=current();if(!c)return;c.searchFieldNames=field.checked;
-   if(c.tree.query.trim()){c.tree.token++;var inp=document.getElementById('filterInput');inp.dispatchEvent(new Event('input'));}
+   if(c.tree.query.trim()){
+     c.tree.token++;
+     document.getElementById('filterInput').dispatchEvent(new Event('input'));
+   }
  });
- fav.addEventListener('click',()=>{
-   panel.hidden=!panel.hidden;
-   if(panel.hidden)return;
+ function close(focus){
+   panel.hidden=true;
+   fav.setAttribute('aria-expanded','false');
+   if(focus)fav.focus();
+ }
+ function renderSaved(){
    panel.replaceChildren();
+   var head=E('div','ge-favorite-head');
+   head.appendChild(E('strong','','Saved resources'));
+   head.appendChild(B('×','ge-favorite-close',()=>close(true)));
+   panel.appendChild(head);
    var saved=safeStorageRead(favoritesKey),recent=safeStorageRead(recentKey);
    [['Favorites',saved],['Recent',recent]].forEach(([label,items])=>{
-     panel.appendChild(E('h4','',label));
-     if(!items.length)panel.appendChild(E('p','ge-muted','No saved URLs yet.'));
+     var section=E('section','ge-favorite-section');
+     section.appendChild(E('h4','',label+' ('+items.length+')'));
+     if(!items.length)section.appendChild(E('p','ge-muted',label==='Favorites'?'No saved layers yet.':'No recently viewed layers.'));
      items.forEach(url=>{
        var row=E('div','ge-favorite-row');
-       row.appendChild(B(url.split('/').filter(Boolean).slice(-2).join('/')||url,'ge-favorite-link',()=>{
-         panel.hidden=true;C().navigate(url);
-       }));
-       if(label==='Favorites')row.appendChild(B('×','ge-quiet',()=>{
-         safeStorageWrite(favoritesKey,saved.filter(x=>x!==url));panel.hidden=true;fav.click();
-       }));
-       panel.appendChild(row);
+       var link=B(url.split('/').filter(Boolean).slice(-2).join('/')||url,'ge-favorite-link',()=>{
+         close(false);C().navigate(url);
+       });
+       link.title=url;
+       row.appendChild(link);
+       if(label==='Favorites'){
+         var remove=B('×','ge-favorite-remove',()=>{
+           safeStorageWrite(favoritesKey,safeStorageRead(favoritesKey).filter(x=>x!==url));
+           renderSaved();
+         });
+         remove.setAttribute('aria-label','Remove saved layer '+url);
+         remove.title='Remove favorite';
+         row.appendChild(remove);
+       }
+       section.appendChild(row);
      });
+     panel.appendChild(section);
    });
-   panel.appendChild(E('p','ge-muted','Saved URLs stay on this device. Tokens and layer records are not saved.'));
+ }
+ fav.addEventListener('click',()=>{
+   if(!panel.hidden){close(false);return;}
+   var options=document.getElementById('gisSearchOptionsPanel'),
+       optsButton=document.getElementById('gisSearchOptionsBtn');
+   if(options)options.hidden=true;
+   if(optsButton)optsButton.setAttribute('aria-expanded','false');
+   renderSaved();
+   panel.hidden=false;
+   fav.setAttribute('aria-expanded','true');
+ });
+ document.addEventListener('pointerdown',e=>{
+   if(!panel.hidden && !panel.contains(e.target) && !fav.contains(e.target))close(false);
+ });
+ document.addEventListener('keydown',e=>{
+   if(e.key==='Escape'&&!panel.hidden){e.preventDefault();close(true);}
  });
 }
 function resetSensitive(){
