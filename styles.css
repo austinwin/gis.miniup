@@ -859,6 +859,19 @@ body.gis-resizing,body.gis-resizing *{cursor:col-resize!important;user-select:no
   font-weight:550;
   line-height:1;
 }
+.sidebar-tool-button svg,
+.sidebar .side-search-icon svg {
+  display:block;
+  width:16px;
+  height:16px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.sidebar-tool-button svg { transition:transform .15s ease; }
+.sidebar.is-tree-collapsed .mobile-tree-toggle svg { transform:rotate(180deg); }
 .sidebar-tool-button:hover,
 .sidebar-tool-button[aria-expanded="true"]:not(.mobile-tree-toggle) {
   background:#eaf2fa;
