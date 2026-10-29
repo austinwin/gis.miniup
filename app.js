@@ -584,7 +584,9 @@
     }
     nodes.forEach(function (node, j) {
       if (j) host.appendChild(el('span', 'crumb-separator', '/'));
-      host.appendChild(btn(node.label, 'crumb' + (j === nodes.length - 1 ? ' current' : ''), function () { navigate(node.url); }));
+      var crumb=btn(node.label,'crumb'+(j===nodes.length-1?' current':''),function(){navigate(node.url);});
+      crumb.title=node.label;
+      host.appendChild(crumb);
     });
     $('upButton').disabled = !parentUrl(state.url);
   }
@@ -593,6 +595,7 @@
     var resourceLabel=type==='root'?'Directory':type==='service'?'Service':kindFor(d,state.url);
     $('eyebrow').textContent=resourceLabel;
     $('pageTitle').textContent=titleFor(d,state.url);
+    $('pageTitle').title=$('pageTitle').textContent;
     var description=String(d.description || d.serviceDescription || d.mapName || state.url || '');
     $('pageDescription').textContent=description;
     $('pageDescription').title=description;
@@ -619,7 +622,7 @@
     var host=clear($('statGrid'));
     stats().forEach(function(s){
       var c=el('div','stat'), value=formatNum(s[1]);
-      c.title=s[2];
+      c.title=s[0]+': '+value+' — '+s[2];
       c.setAttribute('aria-label',s[0]+': '+value+'. '+s[2]);
       append(c,el('span','stat-label',s[0]),el('strong','stat-value',value));
       host.appendChild(c);
