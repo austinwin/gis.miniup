@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ArcGIS sign-in · GIS Explorer</title></head>
+<body style="font:16px/1.5 system-ui,sans-serif;padding:26px;color:#1d2939">
+<p id="status">Finishing ArcGIS sign-in…</p>
+<script>
+(function(){
+  'use strict';
+  var params=new URLSearchParams(location.search);
+  var code=params.get('code');
+  var state=params.get('state');
+  var error=params.get('error') || params.get('error_description') || '';
+  history.replaceState(null,'',location.pathname);
+  if(window.opener && !window.opener.closed){
+    try{
+      window.opener.postMessage({type:'GIS_ARCGIS_OAUTH_CALLBACK',code:code,state:state,error:error},location.origin);
+      document.getElementById('status').textContent='Sign-in response sent. You may close this window.';
+      window.close();
+      return;
+    }catch(e){}
+  }
+  if(code && state){
+    location.replace(new URL('./?arcgis_code='+encodeURIComponent(code)+'&arcgis_state='+encodeURIComponent(state),location.href).href);
+  } else {
+    document.getElementById('status').textContent=error ? 'ArcGIS sign-in could not finish: '+error : 'Sign-in was cancelled or no authorization code was returned.';
+  }
+})();
+</script>
+</body>
+</html>
