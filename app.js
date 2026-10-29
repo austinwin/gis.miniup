@@ -477,7 +477,7 @@
   }
   function renderSidebar() {
     var host=clear($('navItems')),t=state.tree,word=t.query.trim().toLowerCase();
-    $('sideHeading').textContent=word?'SEARCH RESULTS':'DIRECTORY TREE';
+    $('sideHeading').textContent=word?'Search results':'Directory';
     if(!t.root){
       $('itemCount').textContent='0';
       host.appendChild(el('div','nav-placeholder','Connecting to ArcGIS services…'));
@@ -486,11 +486,14 @@
     $('itemCount').textContent=word?String(treeMatches(t.root,word)):String(treeVisibleCount(t.root));
     var info=$('treeMeta');
     if(info){
-      if(t.busy)info.textContent='Searching all nested folders, services and layers… '+t.scanned+' branches checked';
-      else if(word)info.textContent=treeMatches(t.root,word)+' matches · '+t.scanned+' branches checked'+
-        (t.failed?' · '+t.failed+' unavailable':'')+
-        (t.limited?' · Search limit reached':'');
-      else info.textContent='Use ▸ to expand a branch · parents stay visible';
+      // Show only actionable search status; permanent instructions waste tree space.
+      if(t.busy)info.textContent='Searching… '+t.scanned+' branches checked';
+      else if(word && (t.failed || t.limited))
+        info.textContent=(t.failed ? t.failed+' branches unavailable' : '')+
+          (t.failed && t.limited ? ' · ' : '')+
+          (t.limited ? 'Search limit reached' : '');
+      else info.textContent='';
+      info.hidden=!info.textContent;
       info.classList.toggle('scanning',t.busy);
     }
     if(!word || treeHasMatch(t.root,word)){
@@ -1759,6 +1762,41 @@
   }
 
 
+
+  // Compact directory controls; keep mobile navigation vertical and collapsible.
+  function setupSidebarToolbar(){
+    var optionsButton=$('gisSearchOptionsBtn'),optionsPanel=$('gisSearchOptionsPanel');
+    var favoritesButton=$('gisFavoritesBtn'),favoritesPanel=$('gisFavoritePanel');
+    var collapseButton=$('mobileTreeToggle'),sidebar=document.querySelector('.sidebar');
+    function closeOptions(){
+      optionsPanel.hidden=true;
+      optionsButton.setAttribute('aria-expanded','false');
+    }
+    optionsButton.addEventListener('click',function(){
+      var open=optionsPanel.hidden;
+      if(open){
+        favoritesPanel.hidden=true;
+        favoritesButton.setAttribute('aria-expanded','false');
+      }
+      optionsPanel.hidden=!open;
+      optionsButton.setAttribute('aria-expanded',String(open));
+    });
+    document.addEventListener('pointerdown',function(e){
+      if(!optionsPanel.hidden && !optionsPanel.contains(e.target) && !optionsButton.contains(e.target))
+        closeOptions();
+    });
+    document.addEventListener('keydown',function(e){
+      if(e.key==='Escape' && !optionsPanel.hidden){closeOptions();optionsButton.focus();}
+    });
+    collapseButton.addEventListener('click',function(){
+      var collapsed=sidebar.classList.toggle('is-tree-collapsed');
+      collapseButton.setAttribute('aria-expanded',String(!collapsed));
+      collapseButton.setAttribute('aria-label',collapsed?'Expand directory tree':'Collapse directory tree');
+      collapseButton.title=collapsed?'Expand directory tree':'Collapse directory tree';
+      collapseButton.textContent=collapsed?'▾':'▴';
+    });
+  }
+
   // Safe public interface for the small interaction module. Do not expose tokens.
   async function postArcGIS(url,params,signal){
     var u=new URL(url),base=rootOf(state.url||EXAMPLE);
@@ -1786,6 +1824,8 @@
 
   setupSidebarResize();
   attachAuthUI();
+  setupSidebarToolbar();
+  if(window.GISEnhancements)window.GISEnhancements.setupExtras();
   if(window.GISServerHistory)window.GISServerHistory.setup({
     normalize:normalize,rootOf:rootOf,navigate:navigate,
     getCurrent:function(){return state.url||$('urlInput').value;}
