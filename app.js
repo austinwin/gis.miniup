@@ -475,8 +475,14 @@
     }
     return container;
   }
+  var renderedTreeScope='';
   function renderSidebar() {
-    var host=clear($('navItems')),t=state.tree,word=t.query.trim().toLowerCase();
+    var host=$('navItems'),t=state.tree,word=t.query.trim().toLowerCase();
+    // Rebuilding a branch must not jump users back to the top of long directories.
+    var sameScope=renderedTreeScope===t.scope, top=sameScope?host.scrollTop:0,
+        left=sameScope?host.scrollLeft:0;
+    renderedTreeScope=t.scope;
+    clear(host);
     $('sideHeading').textContent=word?'Search results':'Directory';
     if(!t.root){
       $('itemCount').textContent='0';
@@ -502,6 +508,8 @@
     }
     if(!host.children.length)
       host.appendChild(el('div','nav-placeholder',t.busy?'Searching deeper…':'No matches in the accessible subtree.'));
+    host.scrollTop=top;
+    host.scrollLeft=left;
   }
   function requestTreeSearch() {
     var t=state.tree;
@@ -1841,7 +1849,13 @@
     }
   })();
   $('urlForm').addEventListener('submit', function (e) { e.preventDefault(); navigate($('urlInput').value); });
-  $('filterInput').addEventListener('input', function(e) { state.tree.query=e.target.value || ''; state.tree.nodes.forEach(function(n){n.collapsedSearch=false;}); requestTreeSearch(); });
+  $('filterInput').addEventListener('input', function(e) {
+    state.tree.query=e.target.value || '';
+    state.tree.nodes.forEach(function(n){n.collapsedSearch=false;});
+    $('navItems').scrollTop=0;
+    $('navItems').scrollLeft=0;
+    requestTreeSearch();
+  });
   $('homeButton').addEventListener('click', function () { navigate(state.root); });
   $('upButton').addEventListener('click', function () { var p = parentUrl(state.url); if (p) navigate(p); });
   $('copyUrl').addEventListener('click', function () { copyText(state.url); });
