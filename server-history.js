@@ -130,6 +130,8 @@
         return;
       }
       item.saved = !item.saved;
+      // A bookmark that was never visited should not become fictitious history.
+      if (!item.saved && !item.lastVisited) entries = entries.filter(function (x) { return x.url !== url; });
     }
     persist();
     message(item.saved ? 'Server bookmarked on this device.' : 'Bookmark removed.');
@@ -147,15 +149,23 @@
     var controls = node('div', 'sh-rename-actions');
     function cancel() { editing = ''; render(); }
     function save() {
-      item.name = input.value.trim().slice(0, 64);
+      var name = input.value.trim().slice(0, 64);
+      if (name && !item.saved && entries.filter(function (x) { return x.saved; }).length >= SAVED_LIMIT) {
+        message('Bookmark limit reached. Remove a saved server first.');
+        return;
+      }
+      item.name = name;
+      // A custom name indicates an intentional bookmark, not temporary history.
+      if (name) item.saved = true;
       editing = '';
       persist();
-      message('Display name updated.');
+      message(name ? 'Server renamed and bookmarked.' : 'Custom name cleared.');
       render();
     }
     controls.appendChild(button('Save', 'sh-save-name', 'Save display name', save));
     controls.appendChild(button('Cancel', 'sh-cancel-name', 'Cancel renaming', cancel));
     fields.appendChild(input);
+    fields.appendChild(node('small', 'sh-rename-hint', 'Naming a server also adds it to Bookmarks.'));
     fields.appendChild(controls);
     row.replaceChildren(fields);
     input.addEventListener('keydown', function (event) {
@@ -195,7 +205,7 @@
     var header = node('div', 'sh-section-header');
     header.appendChild(node('h3', '', title + ' (' + items.length + ')'));
     if (isRecent && items.length) {
-      header.appendChild(button('Clear recent', 'sh-clear-button', 'Clear recent servers, keep bookmarks', function () {
+      header.appendChild(button('Clear all recent', 'sh-clear-button', 'Clear recent servers, keep bookmarks', function () {
         confirmingClear = !confirmingClear;
         render();
       }));
