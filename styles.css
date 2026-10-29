@@ -901,7 +901,8 @@ body.gis-resizing,body.gis-resizing *{cursor:col-resize!important;user-select:no
   height:29px;
 }
 .sidebar .tree-text { font-size:12.5px; }
-.sidebar .tree-sub { font-size:10.5px; }
+/* Type remains available via icon and the full title tooltip; keep each row one line. */
+.sidebar .tree-sub { display:none; }
 .sidebar .tree-loading,
 .sidebar .tree-error { padding-top:5px; padding-bottom:5px; }
 .sidebar .tree-meta[hidden] { display:none!important; }
