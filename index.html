@@ -13,7 +13,31 @@
   <div class="app">
     <header class="topbar">
       <div class="brand"><div class="brandmark"><span class="brand-symbol">G</span></div><div><strong>GIS Explorer</strong><small>ArcGIS REST browser</small></div></div>
-      <form id="urlForm" class="urlbar" autocomplete="off"><label class="sr-only" for="urlInput">ArcGIS REST URL</label><div class="url-icon">⌁</div><input id="urlInput" type="url" required spellcheck="false" placeholder="Paste an ArcGIS REST services URL…" /><button id="goButton" type="submit">Explore <span>↗</span></button></form>
+      <div class="url-control">
+        <form id="urlForm" class="urlbar" autocomplete="off">
+          <label class="sr-only" for="urlInput">ArcGIS REST URL</label>
+          <div class="url-icon" aria-hidden="true">⌁</div>
+          <input id="urlInput" type="url" required spellcheck="false" placeholder="Paste an ArcGIS REST services URL…" />
+          <button id="serverHistoryButton" class="server-history-trigger" type="button" title="Server history and bookmarks" aria-haspopup="dialog" aria-expanded="false" aria-controls="serverHistoryPanel">
+            <span aria-hidden="true">◷</span><span class="sh-trigger-label">History</span>
+          </button>
+          <button id="goButton" type="submit">Explore <span>↗</span></button>
+        </form>
+        <div id="serverHistoryPanel" class="server-history-panel" role="dialog" aria-labelledby="serverHistoryTitle" hidden>
+          <div class="sh-header">
+            <div><h2 id="serverHistoryTitle">Your ArcGIS servers</h2><p>Quickly reopen servers you have used.</p></div>
+            <button id="serverHistoryClose" class="sh-close" type="button" aria-label="Close server history">×</button>
+          </div>
+          <div class="sh-tools">
+            <button id="serverHistorySave" class="sh-bookmark-current" type="button" aria-pressed="false">☆ Save current server</button>
+            <label class="sr-only" for="serverHistorySearch">Search saved and recent servers</label>
+            <input id="serverHistorySearch" class="sh-search" type="search" placeholder="Search servers or names…" autocomplete="off" />
+          </div>
+          <div id="serverHistoryStatus" class="sh-status" role="status" aria-live="polite"></div>
+          <div id="serverHistoryList" class="sh-list"></div>
+          <p class="sh-footer">Saved only in this browser. Server URLs and display names are stored, not authentication tokens. Clearing browser data removes this history.</p>
+        </div>
+      </div>
       <button id="authButton" class="auth-button" type="button" aria-haspopup="dialog">Sign in</button>
       <div id="connectionBadge" class="connection"><i></i><span>Not connected</span></div>
     </header>
@@ -79,6 +103,7 @@
   </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
   <script src="./gis-enhancements.js" defer></script>
+  <script src="./server-history.js" defer></script>
   <script src="./app.js" defer></script>
 </body>
 </html>
