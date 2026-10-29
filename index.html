@@ -42,15 +42,31 @@
       <div id="connectionBadge" class="connection"><i></i><span>Not connected</span></div>
     </header>
     <div class="workspace">
-      <aside class="sidebar">
-        <div class="side-top"><div class="eyebrow">BROWSE</div><h2>Services directory</h2><p>Expand folders, services, layers and tables</p></div>
-        <div class="side-search"><span>⌕</span><input id="filterInput" type="search" placeholder="Search all nested layers…" aria-label="Search all nested folders, services, layers and tables" /></div>
-        <div class="browse-extras"><button id="gisFavoritesBtn" class="subtle-button" type="button">☆ Favorites & recent</button>
-        <label title="Search the field names and descriptions of layer metadata, which makes additional API requests."><input id="gisFieldSearch" type="checkbox"/> Include field names</label></div>
-        <div id="gisFavoritePanel" class="gis-favorite-panel" hidden></div>
-        <div id="treeMeta" class="tree-meta">Browse the full ArcGIS directory tree</div>
-        <div class="side-section"><div class="side-section-head"><span id="sideHeading">DIRECTORY TREE</span><span id="itemCount">0</span></div><div id="navItems" class="nav-items"><div class="nav-placeholder">Connect to a service to begin.</div></div></div>
-        <div class="side-footer"><button id="upButton" class="subtle-button" type="button">← Parent directory</button><div class="caption">Explorer-style tree · read-only ArcGIS browser</div></div>
+      <aside class="sidebar" aria-label="ArcGIS directory explorer">
+        <div class="sidebar-toolbar">
+          <div class="side-search">
+            <span class="side-search-icon" aria-hidden="true">⌕</span>
+            <input id="filterInput" type="search" placeholder="Search directory…" aria-label="Search ArcGIS folders, services, and layers" autocomplete="off" />
+          </div>
+          <div class="sidebar-tools-row">
+            <div class="side-section-head"><span id="sideHeading">Directory</span><span id="itemCount" aria-label="Visible directory items">0</span></div>
+            <div class="sidebar-actions">
+              <button id="upButton" class="sidebar-tool-button" type="button" aria-label="Parent directory" title="Parent directory">↑</button>
+              <button id="gisFavoritesBtn" class="sidebar-tool-button" type="button" aria-label="Saved layers and recent resources" title="Saved layers and recent resources" aria-haspopup="true" aria-expanded="false" aria-controls="gisFavoritePanel">☆</button>
+              <button id="gisSearchOptionsBtn" class="sidebar-tool-button" type="button" aria-label="Search options" title="Search options" aria-expanded="false" aria-controls="gisSearchOptionsPanel">⚙</button>
+              <button id="mobileTreeToggle" class="sidebar-tool-button mobile-tree-toggle" type="button" aria-label="Collapse directory tree" aria-expanded="true" aria-controls="sideTreeSection" title="Collapse directory tree">▴</button>
+            </div>
+          </div>
+          <div id="gisSearchOptionsPanel" class="gis-search-options" hidden>
+            <label title="Also search field names and descriptions; searches take longer."><input id="gisFieldSearch" type="checkbox" /> Include field names in search</label>
+            <small>This searches layer metadata and may make more API requests.</small>
+          </div>
+          <div id="gisFavoritePanel" class="gis-favorite-panel" hidden></div>
+          <div id="treeMeta" class="tree-meta" role="status" aria-live="polite" hidden></div>
+        </div>
+        <div id="sideTreeSection" class="side-section">
+          <div id="navItems" class="nav-items" role="tree" aria-label="ArcGIS services directory"><div class="nav-placeholder">Connect to a service to begin.</div></div>
+        </div>
       </aside>
       <div id="sidebarResizer" class="sidebar-resizer" role="separator" aria-label="Resize directory panel" aria-orientation="vertical" aria-controls="navItems" aria-valuemin="220" aria-valuemax="560" aria-valuenow="300" tabindex="0" title="Drag to resize · Double-click to reset"></div>
       <main class="main">
@@ -60,7 +76,6 @@
         <div id="statGrid" class="stat-grid"></div>
         <nav id="tabs" class="tabs" aria-label="Resource views"></nav>
         <section id="content" class="content" aria-live="polite"><div class="welcome"><div class="welcome-symbol">G</div><h2>Explore ArcGIS REST endpoints</h2><p>Enter a public ArcGIS REST services URL to browse folders, map services, feature layers, fields and queryable records.</p><button id="exampleButton" class="primary-button">Explore Houston GIS ↗</button></div></section>
-        <div class="page-foot">Read-only ArcGIS REST explorer. Data and access permissions are managed by the source server.</div>
       </main>
     </div>
   </div>
