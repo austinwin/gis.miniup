@@ -759,3 +759,356 @@ body.gis-resizing,body.gis-resizing *{cursor:col-resize!important;user-select:no
  .urlbar #goButton span{display:none}
  .server-history-panel{width:100%;max-height:min(66dvh,570px)}
 }
+
+
+/* Compact directory workspace — keep the navigation tree the primary content. */
+.sidebar-toolbar {
+  flex:0 0 auto;
+  position:relative;
+  z-index:18;
+  min-width:0;
+  padding:10px 10px 5px;
+  background:#fff;
+}
+.sidebar .side-search {
+  display:flex;
+  align-items:center;
+  margin:0;
+  width:100%;
+  min-width:0;
+  height:37px;
+  padding:0 10px;
+  gap:7px;
+  border:1px solid #cfdae5;
+  border-radius:7px;
+  background:#f8fafc;
+}
+.sidebar .side-search:focus-within {
+  background:#fff;
+  border-color:#8ab3da;
+  box-shadow:0 0 0 2px rgba(35,103,167,.13);
+}
+.sidebar .side-search-icon {
+  flex:none;
+  font-size:18px;
+  line-height:1;
+  color:#627991;
+}
+.sidebar .side-search input {
+  flex:1;
+  width:100%;
+  height:100%;
+  min-width:0;
+  padding:0;
+  background:transparent;
+  border:0;
+  outline:0;
+  color:#21364b;
+  font-size:12.5px;
+}
+.sidebar-tools-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:34px;
+  gap:5px;
+  margin-top:4px;
+  padding:0 2px 3px;
+  border-bottom:1px solid #ebeff3;
+}
+.sidebar .side-section-head {
+  display:flex;
+  align-items:center;
+  flex:1;
+  min-width:0;
+  gap:7px;
+  padding:0;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0;
+  color:#52667b;
+  text-transform:none;
+}
+.sidebar .side-section-head #itemCount {
+  background:#edf2f7;
+  color:#577087;
+  padding:1px 6px;
+  border-radius:5px;
+  font-size:10.5px;
+  font-variant-numeric:tabular-nums;
+}
+.sidebar-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  flex:none;
+  gap:2px;
+}
+.sidebar-tool-button {
+  display:grid;
+  place-items:center;
+  width:29px;
+  height:29px;
+  min-width:29px;
+  border:1px solid transparent;
+  border-radius:6px;
+  background:transparent;
+  color:#526e88;
+  padding:0;
+  font-size:17px;
+  font-weight:550;
+  line-height:1;
+}
+.sidebar-tool-button:hover,
+.sidebar-tool-button[aria-expanded="true"]:not(.mobile-tree-toggle) {
+  background:#eaf2fa;
+  border-color:#d1e0ee;
+  color:#175995;
+}
+.sidebar-tool-button:disabled {
+  opacity:.33;
+  cursor:default;
+}
+.mobile-tree-toggle { display:none; }
+.sidebar .side-section {
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  max-height:none;
+  overflow:hidden;
+}
+.sidebar .nav-items {
+  display:block;
+  flex:1 1 auto;
+  min-height:0;
+  max-height:none;
+  width:100%;
+  overflow:auto;
+  padding:3px 7px 12px;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:#c8d4df transparent;
+}
+.sidebar .tree-line { min-height:30px; }
+.sidebar .tree-item {
+  min-height:29px;
+  padding:5px 6px;
+  gap:7px;
+}
+.sidebar .tree-caret,
+.sidebar .tree-caret-spacer {
+  height:29px;
+}
+.sidebar .tree-text { font-size:12.5px; }
+.sidebar .tree-sub { font-size:10.5px; }
+.sidebar .tree-loading,
+.sidebar .tree-error { padding-top:5px; padding-bottom:5px; }
+.sidebar .tree-meta[hidden] { display:none!important; }
+.sidebar .tree-meta {
+  min-height:0;
+  margin:4px 0 0;
+  padding:5px 8px;
+  background:#f1f6fb;
+  border-radius:5px;
+  color:#4c6982;
+  font-size:11px;
+  line-height:1.4;
+}
+.sidebar .gis-favorite-panel[hidden],
+.sidebar .gis-search-options[hidden] { display:none!important; }
+.sidebar .gis-favorite-panel,
+.sidebar .gis-search-options {
+  position:absolute;
+  left:10px;
+  right:10px;
+  top:calc(100% - 2px);
+  z-index:25;
+  width:auto;
+  max-height:min(56dvh,440px);
+  margin:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  border:1px solid #cad8e5;
+  border-radius:9px;
+  background:#fff;
+  box-shadow:0 14px 32px rgba(26,47,71,.16);
+}
+.sidebar .gis-favorite-panel { padding:9px 10px 12px; }
+.ge-favorite-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  padding:0 2px 6px;
+  border-bottom:1px solid #e5ebf1;
+}
+.ge-favorite-head strong { font-size:12.5px; font-weight:750; color:#253c53; }
+.ge-favorite-close {
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  padding:0;
+  border:0;
+  border-radius:5px;
+  background:transparent;
+  color:#526a82;
+  font-size:21px;
+}
+.ge-favorite-close:hover { background:#edf3f8; }
+.ge-favorite-section { padding:6px 0 2px; }
+.ge-favorite-section + .ge-favorite-section {
+  margin-top:4px;
+  border-top:1px solid #e9edf2;
+}
+.sidebar .gis-favorite-panel h4 {
+  font-size:11px;
+  margin:3px 4px 5px;
+  color:#52687e;
+}
+.sidebar .gis-favorite-panel p { margin:4px 6px; }
+.ge-favorite-row {
+  display:flex;
+  align-items:center;
+  min-width:0;
+  gap:3px;
+  margin:0;
+}
+.ge-favorite-link {
+  flex:1;
+  min-width:0;
+  min-height:35px;
+  padding:7px 8px;
+  text-align:left;
+  color:#225b8b;
+  font-size:12px;
+}
+.ge-favorite-remove {
+  display:grid;
+  place-items:center;
+  flex:none;
+  width:31px;
+  height:33px;
+  border:0;
+  border-radius:6px;
+  background:transparent;
+  color:#657a8e;
+  font-size:19px;
+}
+.ge-favorite-remove:hover {
+  background:#fff0ef;
+  color:#a43833;
+}
+.sidebar .gis-search-options {
+  display:grid;
+  gap:4px;
+  padding:12px;
+}
+.gis-search-options label {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#273d51;
+  font-size:12.5px;
+  cursor:pointer;
+}
+.gis-search-options input { accent-color:#225e97; width:16px; height:16px; }
+.gis-search-options small { color:#60758a; font-size:11px; line-height:1.4; }
+
+/* Wrap the global URL bar before it becomes cramped; do not clip the server URL. */
+@media(max-width:900px) {
+  .topbar {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"brand auth" "url url";
+    height:108px;
+    min-height:0;
+    gap:6px 10px;
+    align-content:center;
+    padding:8px 14px;
+  }
+  .topbar .brand {
+    grid-area:brand;
+    min-width:0;
+    width:auto;
+    gap:8px;
+  }
+  .topbar .brand small { display:none; }
+  .topbar .url-control {
+    grid-area:url;
+    order:initial;
+    min-width:0;
+    max-width:none;
+    width:100%;
+    flex:none;
+  }
+  .topbar .auth-button {
+    grid-area:auth;
+    order:initial;
+    justify-self:end;
+    margin:0;
+  }
+  .topbar .connection { display:none; }
+  .sidebar {
+    top:108px;
+    height:calc(100dvh - 108px);
+    min-height:0;
+  }
+  .sidebar-resizer {
+    top:108px;
+    height:calc(100dvh - 108px);
+  }
+}
+@media(max-width:700px) {
+  .topbar { height:auto; min-height:0; padding:8px 11px; }
+  .topbar .brand { min-width:0; }
+  .topbar .brandmark { width:29px; height:29px; }
+  .topbar .urlbar { height:39px; }
+  .topbar .url-control { flex:none; }
+  .sidebar {
+    position:relative;
+    top:0;
+    width:100%;
+    height:clamp(270px,49dvh,470px);
+    min-height:0;
+    flex:none;
+    border-right:0;
+    border-bottom:1px solid #d5dfe8;
+  }
+  .sidebar-toolbar { padding:7px 10px 4px; }
+  .sidebar .side-search { height:38px; }
+  .sidebar .side-section { display:flex; max-height:none; min-height:0; }
+  .sidebar .nav-items {
+    display:block;
+    flex:1;
+    width:100%;
+    max-height:none;
+    overflow:auto;
+    padding:2px 7px 10px;
+  }
+  .sidebar .tree-line { min-height:33px; }
+  .sidebar .tree-item { min-height:33px; padding:6px 7px; }
+  .sidebar .tree-caret,.sidebar .tree-caret-spacer { height:33px; }
+  .mobile-tree-toggle { display:grid; }
+  .sidebar.is-tree-collapsed { height:auto; }
+  .sidebar.is-tree-collapsed .side-section { display:none; }
+  .sidebar .gis-favorite-panel,
+  .sidebar .gis-search-options { max-height:min(48dvh,370px); }
+  .intro-tools {
+    display:flex;
+    flex-basis:100%;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .page-intro { flex-wrap:wrap; padding:14px 0 12px; }
+  .intro-tools .action-button { font-size:11.5px; padding:7px 9px; }
+  .page-intro .intro-titles h1 { font-size:19px; }
+}
+@media(max-width:370px) {
+  .topbar .url-icon { display:none; }
+  .urlbar .server-history-trigger { width:35px; min-height:33px; }
+  .urlbar #goButton { padding:8px 9px; }
+  .sidebar .side-section-head { font-size:10.5px; }
+  .sidebar-tool-button { width:27px; min-width:27px; }
+}
