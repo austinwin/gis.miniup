@@ -592,7 +592,7 @@
   }
   function renderIntro() {
     var d = state.data || {}, type = resourceType(state.url);
-    var resourceLabel=type==='root'?'Directory':type==='service'?'Service':kindFor(d,state.url);
+    var resourceLabel=type==='root'?'Directory':kindFor(d,state.url);
     $('eyebrow').textContent=resourceLabel;
     $('pageTitle').textContent=titleFor(d,state.url);
     $('pageTitle').title=$('pageTitle').textContent;
