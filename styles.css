@@ -732,6 +732,7 @@ body.gis-resizing,body.gis-resizing *{cursor:col-resize!important;user-select:no
 .sh-icon-button.sh-delete:hover{color:#a73731;background:#fdeeed}
 .sh-rename{width:100%;min-width:0;display:grid;gap:8px;padding:5px}
 .sh-name-input{min-width:0;width:100%;border:1px solid #bccddc;border-radius:6px;padding:9px 10px;font-size:13px}
+.sh-rename-hint{font-size:11px;color:#60798d;line-height:1.4}
 .sh-rename-actions{display:flex;gap:6px;justify-content:flex-end}
 .sh-save-name,.sh-cancel-name,.sh-confirm-button{border:1px solid #cbd9e5;background:#fff;color:#355b79;border-radius:6px;padding:7px 11px;font-size:12px}
 .sh-save-name,.sh-confirm-button{background:#185595;color:#fff;border-color:#185595}
