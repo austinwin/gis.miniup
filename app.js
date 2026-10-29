@@ -1801,7 +1801,7 @@
       collapseButton.setAttribute('aria-expanded',String(!collapsed));
       collapseButton.setAttribute('aria-label',collapsed?'Expand directory tree':'Collapse directory tree');
       collapseButton.title=collapsed?'Expand directory tree':'Collapse directory tree';
-      collapseButton.textContent=collapsed?'▾':'▴';
+      // The chevron rotates through CSS; keep its SVG and accessible labels intact.
     });
   }
 
