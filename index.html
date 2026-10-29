@@ -72,7 +72,14 @@
       <main class="main">
         <div class="breadcrumbs"><button id="homeButton" title="Directory root">⌂</button><div id="crumbs"></div><button id="copyUrl" class="copy-url" type="button" title="Copy current REST URL">⧉ Copy URL</button></div>
         <div id="alert" class="alert" hidden></div>
-        <section class="page-intro"><div class="intro-icon" id="introIcon">▦</div><div class="intro-titles"><div id="eyebrow" class="eyebrow">ARCGIS REST DIRECTORY</div><h1 id="pageTitle">Explore GIS services</h1><p id="pageDescription">Enter a REST services URL above to start browsing.</p></div><div id="introTools" class="intro-tools"></div></section>
+        <section class="page-intro" aria-label="Current ArcGIS resource">
+          <div class="intro-icon" id="introIcon" aria-hidden="true">▦</div>
+          <div class="intro-titles">
+            <div class="resource-heading"><h1 id="pageTitle">Explore GIS services</h1><span id="eyebrow" class="eyebrow resource-type">Directory</span></div>
+            <p id="pageDescription" title="Current ArcGIS REST resource">Enter an ArcGIS REST services URL to browse.</p>
+          </div>
+          <div id="introTools" class="intro-tools" aria-label="Resource actions"></div>
+        </section>
         <div id="statGrid" class="stat-grid"></div>
         <nav id="tabs" class="tabs" aria-label="Resource views"></nav>
         <section id="content" class="content" aria-live="polite"><div class="welcome"><div class="welcome-symbol">G</div><h2>Explore ArcGIS REST endpoints</h2><p>Enter a public ArcGIS REST services URL to browse folders, map services, feature layers, fields and queryable records.</p><button id="exampleButton" class="primary-button">Explore Houston GIS ↗</button></div></section>
