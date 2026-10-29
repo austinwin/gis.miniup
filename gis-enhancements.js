@@ -649,7 +649,9 @@ function setupExtras(){
    panel.replaceChildren();
    var head=E('div','ge-favorite-head');
    head.appendChild(E('strong','','Saved resources'));
-   head.appendChild(B('×','ge-favorite-close',()=>close(true)));
+   var closeButton=B('×','ge-favorite-close',()=>close(true));
+   closeButton.setAttribute('aria-label','Close saved resources');
+   head.appendChild(closeButton);
    panel.appendChild(head);
    var saved=safeStorageRead(favoritesKey),recent=safeStorageRead(recentKey);
    [['Favorites',saved],['Recent',recent]].forEach(([label,items])=>{
