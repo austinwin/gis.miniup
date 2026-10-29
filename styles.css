@@ -686,3 +686,75 @@ body.gis-resizing,body.gis-resizing *{cursor:col-resize!important;user-select:no
 
 .ge-sortable-header{cursor:pointer;user-select:none}
 .ge-sortable-header:hover,.ge-sortable-header:focus-visible{background:#e2edf7;color:#174f83}
+
+
+/* ArcGIS server history: anchored popover, compact controls and touch-friendly rows. */
+.url-control{position:relative;flex:1;min-width:0;max-width:1000px}
+.url-control .urlbar{width:100%;max-width:none;min-width:0}
+.urlbar .server-history-trigger{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;min-height:34px;border:1px solid #d5e0eb;border-radius:5px;background:#f5f8fb;color:#315979;padding:6px 10px;margin-right:5px;font-size:12px;font-weight:650}
+.urlbar .server-history-trigger:hover,.urlbar .server-history-trigger[aria-expanded="true"]{background:#e7f0fa;color:#184f86;border-color:#b5cde4}
+.urlbar .server-history-trigger>span:first-child{font-size:19px;line-height:1}
+.server-history-panel[hidden]{display:none!important}
+.server-history-panel{position:absolute;top:calc(100% + 9px);right:0;width:min(470px,calc(100vw - 24px));max-height:min(70dvh,620px);z-index:90;display:flex;flex-direction:column;overflow:hidden;background:#fff;border:1px solid #d7e0ea;border-radius:11px;box-shadow:0 16px 48px rgba(17,39,63,.19);text-align:left;white-space:normal}
+.sh-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:17px 18px 12px;border-bottom:1px solid #e7edf3}
+.sh-header h2{margin:0;font-size:16px;font-weight:720;color:#1b3147;letter-spacing:-.2px}
+.sh-header p{font-size:12px;color:#617388;margin:3px 0 0}
+.sh-close{flex:none;border:0;background:transparent;color:#556b7f;font-size:24px;line-height:1;width:34px;height:34px;border-radius:6px}
+.sh-close:hover{background:#eef3f8}
+.sh-tools{padding:12px 16px;display:grid;gap:10px;border-bottom:1px solid #ebeff3}
+.sh-bookmark-current{width:100%;text-align:center;border:1px solid #b7cee5;background:#eef5fc;color:#1c598e;font-weight:700;font-size:12.5px;border-radius:7px;min-height:37px;padding:8px 12px}
+.sh-bookmark-current:hover{background:#dfedf9}
+.sh-bookmark-current[aria-pressed="true"]{background:#e7f2eb;border-color:#b8d7c3;color:#246c44}
+.sh-bookmark-current:disabled{opacity:.5}
+.sh-search{width:100%;min-width:0;border:1px solid #cfdae5;border-radius:7px;background:#fff;color:#243b50;padding:10px 12px;font-size:13px;min-height:40px}
+.sh-search:focus{outline:2px solid #a2bedb;outline-offset:0}
+.sh-status{color:#2b658e;font-size:11.5px;line-height:1.35;padding:0 16px}
+.sh-status:not(:empty){padding:9px 16px;background:#f2f8fd;border-bottom:1px solid #e1ebf3}
+.sh-list{overflow-y:auto;overscroll-behavior:contain;min-height:0;padding:6px 14px 8px}
+.sh-section{padding:7px 0 5px}
+.sh-section+.sh-section{border-top:1px solid #e9edf1;margin-top:5px}
+.sh-section-header{display:flex;justify-content:space-between;align-items:center;gap:9px;margin:0 2px 7px}
+.sh-section-header h3{margin:0;font-size:12px;font-weight:750;color:#526a80;letter-spacing:.1px}
+.sh-clear-button{background:none;border:0;padding:6px 3px;color:#516e86;font-size:11.5px}
+.sh-clear-button:hover{text-decoration:underline;color:#a33c38}
+.sh-empty{font-size:12px;color:#6c7d8e;padding:4px 5px 10px;margin:0}
+.sh-row{display:flex;align-items:center;gap:6px;min-width:0;border:1px solid transparent;border-radius:7px;padding:5px 3px}
+.sh-row:hover{background:#f5f9fc;border-color:#e6edf4}
+.sh-server-link{display:flex;flex:1;flex-direction:column;gap:1px;min-width:0;text-align:left;align-items:flex-start;border:0;background:none;padding:6px 5px;border-radius:5px;color:#203b53}
+.sh-server-link:hover .sh-server-name{color:#145a9d;text-decoration:underline}
+.sh-server-name{display:block;width:100%;font-size:13px;font-weight:700;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sh-server-url{display:block;width:100%;font-size:11px;color:#647b90;line-height:1.45;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.sh-server-date{font-size:10.5px;line-height:1.45;color:#778899}
+.sh-row-actions{display:flex;align-items:center;gap:2px;flex:none}
+.sh-icon-button{display:grid;place-items:center;width:34px;height:36px;border:0;border-radius:6px;background:transparent;color:#566e84;font-size:21px;line-height:1}
+.sh-icon-button:hover{background:#e8f0f7;color:#1a578d}
+.sh-star.is-saved{color:#b07918}
+.sh-icon-button.sh-delete:hover{color:#a73731;background:#fdeeed}
+.sh-rename{width:100%;min-width:0;display:grid;gap:8px;padding:5px}
+.sh-name-input{min-width:0;width:100%;border:1px solid #bccddc;border-radius:6px;padding:9px 10px;font-size:13px}
+.sh-rename-actions{display:flex;gap:6px;justify-content:flex-end}
+.sh-save-name,.sh-cancel-name,.sh-confirm-button{border:1px solid #cbd9e5;background:#fff;color:#355b79;border-radius:6px;padding:7px 11px;font-size:12px}
+.sh-save-name,.sh-confirm-button{background:#185595;color:#fff;border-color:#185595}
+.sh-save-name:hover,.sh-confirm-button:hover{background:#0e437d}
+.sh-cancel-name:hover{background:#f0f5f9}
+.sh-clear-confirm{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:9px;background:#fff8ee;border:1px solid #e8d8bb;border-radius:6px;margin-bottom:8px}
+.sh-clear-confirm span{flex:1 1 100%;font-size:12px;color:#72552e}
+.sh-footer{padding:10px 17px 13px;margin:0;border-top:1px solid #e8edf2;background:#f9fbfd;color:#687e92;font-size:10.5px;line-height:1.5}
+@media(max-width:850px){.sh-trigger-label{display:none}.urlbar .server-history-trigger{width:38px;padding:6px;margin-right:3px}}
+@media(max-width:700px){
+ .topbar .url-control{flex:1;min-width:0}
+ .server-history-panel{top:calc(100% + 7px);max-height:min(68dvh,600px);border-radius:9px}
+ .sh-row{padding:6px 1px}
+ .sh-icon-button{width:39px;height:42px}
+ .sh-tools{padding:10px 12px}
+ .sh-list{padding:5px 10px}
+ .sh-header{padding:13px 14px 11px}
+ .sh-footer{padding:9px 13px 11px}
+}
+@media(max-width:480px){
+ .topbar .url-control{flex:1 1 100%;order:2}
+ .topbar .auth-button{order:3;margin-left:auto}
+ .urlbar #goButton{padding:9px 11px;font-size:12px}
+ .urlbar #goButton span{display:none}
+ .server-history-panel{width:100%;max-height:min(66dvh,570px)}
+}
