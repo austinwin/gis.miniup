@@ -1,0 +1,118 @@
+/* GIS Explorer 2026: focused Explore / Analyze / Map data workspace. */
+#content .gx-workspace[hidden],#content .gx-analysis[hidden],.gx-filter-pane[hidden],.gx-inspector[hidden]{display:none!important}
+.gx-workspace{gap:10px!important;padding-bottom:9px}
+.gx-explore-header{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid #dfe6ef;background:#fff;border-radius:10px;padding:12px 15px;min-width:0}
+.gx-heading{min-width:130px}
+.gx-heading h2{font-size:17px;font-weight:750;letter-spacing:-.35px;color:#182e45;margin:0 0 2px}
+.gx-sub,.gx-muted{font-size:11.5px;color:#70839a;line-height:1.5}
+.gx-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap;min-width:0}
+.gx-search-box{display:flex;align-items:stretch;min-width:200px;max-width:100%;height:36px;border:1px solid #cfdae6;border-radius:7px;background:#fff;overflow:hidden}
+.gx-search-box:focus-within{outline:2px solid #aac9e9;outline-offset:0}
+.gx-search-field{border:0;border-right:1px solid #e1e8ee;background:#f6f9fc;color:#53677a;max-width:125px;min-width:85px;font-size:11.5px;padding:0 6px;outline:0}
+.gx-search-input{min-width:70px;flex:1;width:160px;border:0;outline:0;background:#fff;color:#1e354b;font-size:12px;padding:0 10px}
+.gx-search-run,.gx-small-primary{border:0;border-radius:6px;background:#235a9c;color:white;font-size:12px;font-weight:650;padding:7px 12px;white-space:nowrap}
+.gx-search-run{border-radius:0}
+.gx-small-primary:hover,.gx-search-run:hover{background:#154479}
+.gx-tool-button{border:1px solid #d1dce7;background:#fff;color:#35536e;border-radius:7px;font-size:12px;font-weight:600;padding:8px 11px;white-space:nowrap}
+.gx-tool-button:hover{border-color:#96b7d6;background:#f2f7fb}
+.gx-quiet{border:0;background:transparent;color:#275c91;cursor:pointer;padding:5px 6px;text-align:left;font-size:12px;font-weight:600}
+.gx-quiet:hover{background:#eef4fb}
+.gx-active-chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.gx-chip{border:1px solid #c9dbed;border-radius:100px;background:#edf5fd;color:#285b8f;padding:5px 10px;font-size:11px;max-width:260px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.gx-chip:hover{background:#dcecfb}
+.gx-filter-pane{padding:13px 16px!important;box-shadow:none!important}
+.gx-filter-pane .ge-header{margin-bottom:8px}
+.gx-filter-pane .ge-controls{margin:9px 0}
+.gx-results{padding:12px 13px!important;display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}
+.gx-results .ge-results-head{margin:0}
+.gx-results h3{margin:0;font-size:13px}
+.gx-results .ge-table-scroll{max-height:clamp(320px,55dvh,660px);min-height:260px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#a6b9cb #edf1f5}
+.gx-results .ge-table-scroll::-webkit-scrollbar{width:9px;height:9px}
+.gx-results .ge-table-scroll::-webkit-scrollbar-thumb{background:#b8c7d6;border:2px solid #f4f7fa;border-radius:10px}
+.gx-results .ge-table-scroll::-webkit-scrollbar-corner{background:#f4f7fa}
+.gx-results .ge-data-table{font-size:12px}
+.gx-results .ge-data-table th{padding:9px 10px}
+.gx-results .ge-data-table td{padding:7px 10px}
+.gx-results .ge-data-table tbody tr{cursor:pointer}
+.gx-results .ge-data-table tbody tr:hover td{background:#ecf4fc}
+.gx-results .ge-pagination{margin:1px 0 0;min-height:29px}
+.gx-results .ge-table-settings,.gx-results .ge-action-menu{margin:0}
+.gx-view-menu{position:relative;min-width:0;font-size:12px}
+.gx-view-menu>summary{cursor:pointer;border:1px solid #d1dce7;background:#fff;color:#35536e;border-radius:7px;font-weight:600;padding:8px 11px;white-space:nowrap;list-style:none}
+.gx-view-menu>summary::-webkit-details-marker{display:none}
+.gx-view-menu>summary:after{content:' ▾';color:#778ba1}
+.gx-view-pop{position:absolute;right:0;top:calc(100% + 5px);z-index:35;min-width:240px;max-height:310px;overflow:auto;border:1px solid #d4dfe9;background:#fff;box-shadow:0 12px 30px rgba(15,40,65,.16);border-radius:8px;padding:9px}
+.gx-saved-row{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #edf0f5}
+.gx-saved-row>.gx-quiet:first-child{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gx-delete{color:#a33a35}
+.gx-view-pop .gx-small-primary{width:100%;margin-top:8px}
+.gx-inspector-shade{position:fixed;inset:0;background:rgba(16,35,58,.4);z-index:999}
+.gx-inspector{position:fixed!important;right:0;top:0;bottom:0;width:min(520px,100vw);height:100dvh;z-index:1000!important;overflow-y:auto;overscroll-behavior:contain;background:#fff!important;border:0!important;border-left:1px solid #d3dde8!important;border-radius:0!important;box-shadow:-15px 0 42px rgba(16,35,58,.2);padding:0 20px 20px!important}
+.gx-inspector-top{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;z-index:3;background:#fff;padding:14px 1px;border-bottom:1px solid #e2e8ee;margin-bottom:12px}
+.gx-inspector-top strong{font-size:14px}
+.gx-inspector .ge-detail-scroll{max-height:none!important;overflow:visible!important}
+.gx-inspector .ge-attribute-grid{grid-template-columns:minmax(110px,37%) 1fr}
+.gx-analysis{display:flex;flex-direction:column;gap:15px;padding:0 0 25px}
+.gx-analysis-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.gx-analysis-title h2{margin:0;color:#1b324a;font-size:19px;font-weight:750}
+.gx-analysis-title p{margin:2px 0}
+.gx-analysis-controls{display:flex;align-items:end;gap:10px;flex-wrap:wrap;padding:15px;background:#fff;border:1px solid #e0e7ed;border-radius:8px}
+.gx-analysis-controls label{display:flex;flex-direction:column;gap:5px;color:#50657b;font-size:11px;font-weight:650}
+.gx-select{min-width:175px;max-width:min(310px,80vw);font-size:12px;color:#30475b;border:1px solid #cbd9e4;padding:8px 10px;background:#fff;border-radius:6px}
+.gx-scope{margin:0;overflow-wrap:anywhere}
+.gx-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.gx-metric{background:#fff;border:1px solid #e0e7ee;border-radius:8px;min-width:0;padding:12px 13px}
+.gx-metric span{display:block;font-size:11px;font-weight:650;color:#697d91}
+.gx-metric strong{display:block;font-size:21px;font-weight:750;color:#193450;margin-top:3px;overflow-wrap:anywhere}
+.gx-metric small{display:block;color:#8a98a6;font-size:10px}
+.gx-analysis-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:12px}
+.gx-analytic-card{background:#fff;border:1px solid #e0e7ee;border-radius:8px;min-width:0;padding:17px 18px}
+.gx-analytic-card h3{font-size:13px;color:#1f364d;font-weight:750;margin:0 0 14px}
+.gx-category{display:block;width:100%;padding:8px 5px;border:0;border-bottom:1px solid #f0f3f6;text-align:left;background:none;color:#30495f}
+.gx-category:hover{background:#f1f7fd;border-radius:4px}
+.gx-category-line{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;margin-bottom:5px}
+.gx-category-line span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gx-category-line strong{font-size:11.5px}
+.gx-category-track{height:6px;width:100%;border-radius:4px;background:#e8eef4;overflow:hidden}
+.gx-category-fill{height:100%;background:#3d78ae;border-radius:4px}
+.gx-analytic-card .gx-muted{margin:13px 0 0}
+.gx-numeric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.gx-numeric-grid .gx-metric strong{font-size:17px}
+.gx-error{color:#9b3434;font-size:12px}
+.tabs .gx-more-tabs{position:relative;display:inline-flex;align-items:center;font-size:12px}
+.gx-more-tabs>summary{cursor:pointer;list-style:none;color:#657d93;padding:0 5px 13px}
+.gx-more-tabs>summary::-webkit-details-marker{display:none}
+.gx-more-tabs[open]>summary,.gx-more-tabs.active>summary{color:#245b92;font-weight:700}
+.gx-more-menu{position:absolute;left:0;top:29px;z-index:50;min-width:160px;border-radius:7px;border:1px solid #dce6ee;background:#fff;box-shadow:0 10px 24px rgba(18,39,60,.14);padding:4px}
+.gx-more-menu button{width:100%;display:block;text-align:left;font-size:12px;border:0;background:none;color:#34516c;border-radius:5px;padding:9px 10px}
+.gx-more-menu button:hover,.gx-more-menu button.active{background:#eaf4ff;color:#22588d}
+@media(max-width:1100px){
+ .gx-analysis-grid{grid-template-columns:1fr}
+ .gx-explore-header{align-items:stretch}
+ .gx-toolbar{width:100%}
+ .gx-search-box{flex:1}
+}
+@media(max-width:700px){
+ .gx-explore-header{padding:9px 10px;gap:8px}
+ .gx-heading h2{font-size:15px}
+ .gx-toolbar{gap:6px}
+ .gx-search-box{flex-basis:100%;max-width:100%;min-width:0}
+ .gx-search-field{max-width:110px}
+ .gx-search-input{width:10px;min-width:0}
+ .gx-tool-button,.gx-view-menu>summary{padding:7px 9px}
+ .gx-results{padding:7px!important}
+ .gx-results .ge-table-scroll{height:47dvh;max-height:47dvh;min-height:225px;scrollbar-width:thin}
+ .gx-results .ge-data-table th{padding:9px 9px}
+ .gx-results .ge-data-table td{padding:8px 9px}
+ .gx-analysis-controls>*{flex:1 1 100%}
+ .gx-select{width:100%;max-width:100%}
+ .gx-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .gx-analysis-grid{grid-template-columns:1fr}
+ .gx-inspector{width:100vw;padding:0 14px 20px!important}
+ .gx-inspector .ge-attribute-grid{grid-template-columns:minmax(98px,36%) 1fr}
+}
+@media(prefers-reduced-motion:reduce){.gx-inspector,.gx-inspector-shade{animation:none!important}}
+
+/* Keep the secondary navigation menu visible above the data workspace. */
+.tabs:has(.gx-more-tabs){overflow:visible;flex-wrap:wrap;gap:16px}
+.gx-search-box[hidden]{display:none!important}

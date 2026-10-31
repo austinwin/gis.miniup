@@ -53,9 +53,21 @@ function codeWhere(field,op,value){
  return safe+' '+op+' '+literal;
 }
 function buildWhere(model,exclude){
- var clauses=model.filters.filter(f=>f!==exclude).map(f=>codeWhere(f.field,f.op,f.value)).filter(Boolean);
+ var filters=model.filters.filter(f=>f!==exclude).map(f=>codeWhere(f.field,f.op,f.value)).filter(Boolean);
+ var clauses=[];
+ if(filters.length)clauses.push('('+filters.join(' '+(model.join==='OR'?'OR':'AND')+' ')+')');
+ if(model.search&&model.searchField){
+   var field=(metadata().fields||[]).find(x=>x.name===model.searchField);
+   if(!field)throw Error('The selected search field is unavailable.');
+   var type=fieldType(field);
+   if(/Integer|SmallInteger|Double|Single|OID|BigInteger/i.test(type))
+     clauses.push(codeWhere(field.name,'=',model.search));
+   else if(/String|GUID|GlobalID/i.test(type))
+     clauses.push(codeWhere(field.name,'CONTAINS',model.search));
+   else throw Error('Select a text or numeric field for search.');
+ }
  if(model.advanced?.trim())clauses.push('('+model.advanced.trim()+')');
- return clauses.length?'('+clauses.join(' '+model.join+' ')+')':'1=1';
+ return clauses.length?'('+clauses.join(' AND ')+')':'1=1';
 }
 function currentWhere(){
  var m=getModel();
@@ -224,8 +236,8 @@ function renderData(host){
  join.addEventListener('change',()=>{m.join=join.value});
  add(actions,B('+ Add condition','ge-secondary',()=>{m.filters.push({field:metadata().fields[0]?.name||'',op:'=',value:''});renderData(host)}),
    E('span','ge-inline','Match'),join,
-   B('Apply filters','ge-primary',()=>{m.page=0;m.tableScrollTop=0;m.count=null;m.ids=null;loadRows(m);}),
-   B('Clear','ge-secondary',()=>{m.filters=[];m.advanced='';m.page=0;m.count=null;m.ids=null;m.spatial=null;C().state.exportContext=null;renderData(host);loadRows(m)}));
+   B('Apply filters','ge-primary',()=>{m.page=0;m.tableScrollTop=0;m.count=null;m.ids=null;loadRows(m);loadCount(m);}),
+   B('Clear','ge-secondary',()=>{m.filters=[];m.advanced='';m.search='';m.page=0;m.count=null;m.ids=null;m.spatial=null;C().state.exportContext=null;renderData(host);loadRows(m);loadCount(m)}));
  filter.appendChild(actions);
  var preview=E('div','ge-preview');
  try{m.where=buildWhere(m);preview.textContent='WHERE '+m.where+(m.spatial?'  ·  Spatial extent filter active':'');}
@@ -238,7 +250,7 @@ function renderData(host){
  advanced.appendChild(free);advanced.appendChild(E('p','ge-muted','Server-side SQL syntax varies by ArcGIS version; use the visual filters when possible.'));filter.appendChild(advanced);
  outer.appendChild(filter);
  var results=E('section','ge-card'),info=E('div','ge-flex ge-results-head');
- add(info,E('h3','','Attribute table'),E('span','ge-count',m.count===null?'Count not loaded':m.count.toLocaleString()+' matching records'));
+ add(info,E('h3','','Attribute table'),E('span','ge-count',m.count===null?(m.countError?'Count unavailable':'Counting records…'):m.count.toLocaleString()+' matching records'));
  var countButton=B('Count','ge-secondary',()=>loadCount(m));countButton.disabled=m.counting;info.appendChild(countButton);
  var rowActions=E('div','ge-flex ge-actions');
  if(metadata().type!=='Table' && metadata().geometryType){
@@ -251,12 +263,12 @@ function renderData(host){
     B('Clear selection','ge-secondary',()=>{m.selected.clear();renderData(host)}));
  results.appendChild(info);
  var actionMenu=E('details','ge-action-menu');
- actionMenu.open=window.innerWidth>700||Boolean(m.actionsOpen);
+ actionMenu.open=Boolean(m.actionsOpen);
  actionMenu.addEventListener('toggle',()=>{m.actionsOpen=actionMenu.open});
  actionMenu.appendChild(E('summary','','Map, selection & export actions'));
  actionMenu.appendChild(rowActions);results.appendChild(actionMenu);
  var settings=E('details','ge-table-settings');
- settings.open=window.innerWidth>700||Boolean(m.settingsOpen);
+ settings.open=Boolean(m.settingsOpen);
  settings.addEventListener('toggle',()=>{m.settingsOpen=settings.open});
  settings.appendChild(E('summary','','Table settings · '+m.pageSize+' rows · '+(metadata().fields||[]).length+' columns'));
  var config=E('div','ge-flex ge-controls');
@@ -329,6 +341,7 @@ function renderData(host){
  }
  if(m.detailId!==null)renderRecordDetail(m);
  else showStatus(details,'Select a row to inspect its fields, related records, and attachments.',false);
+ if(window.GISWorkspace)window.GISWorkspace.decorate(host,m);
 }
 function renderRows(root,m){
  var fields=(metadata().fields||[]).filter(f=>!m.hiddenFields.has(f.name));
@@ -368,20 +381,20 @@ function renderRows(root,m){
      td.title=cv?'Code '+textSafe(value)+' · '+cv.name:textSafe(value);
      tr.appendChild(td);
    });
-   tr.addEventListener('click',()=>{m.detailId=oid;renderRecordDetail(m)});
+   tr.addEventListener('click',()=>{m.detailId=oid;renderRecordDetail(m);if(window.GISWorkspace)window.GISWorkspace.openInspector(m)});
    tbody.appendChild(tr);
  });
  table.appendChild(tbody);root.appendChild(table);
 }
 async function loadCount(m){
- m.counting=true;if(m===models.get(layerUrl())&&current()?.tab==='data')renderData(document.getElementById('content'));
+ m.counting=true;m.countError='';if(m===models.get(layerUrl())&&current()?.tab==='data')renderData(document.getElementById('content'));
  try{
    var where=buildWhere(m),p={where,returnCountOnly:'true'};
    Object.assign(p,spatialParams(m));
    var data=await C().post(m.url+'/query',p);
    m.count=Number(data.count)||0;m.error='';
- }catch(e){m.error='Count: '+e.message;}
- finally{m.counting=false;if(m.url===layerUrl()&&current()?.tab==='data')renderData(document.getElementById('content'));}
+ }catch(e){m.countError='Count: '+e.message;}
+ finally{m.counting=false;if(m.url===layerUrl()){if(C().renderStats)C().renderStats();if(current()?.tab==='data')renderData(document.getElementById('content'));}}
 }
 function spatialParams(m){
  if(!m.spatial)return {};
@@ -576,8 +589,15 @@ function refreshVectorOverlay(map){
  var number=s.vectorSeq;
  if(s.vectorLayer){map.removeLayer(s.vectorLayer);s.vectorLayer=null;}
  if(Array.isArray(s.visibleMapLayers) && !s.visibleMapLayers.includes(id))return;
- var bounds=map.getBounds(),m=getModel(),bbox={xmin:bounds.getWest(),ymin:bounds.getSouth(),
-   xmax:bounds.getEast(),ymax:bounds.getNorth(),spatialReference:{wkid:4326}};
+ var bounds=map.getBounds(),m=getModel();
+ // Intersect visible map bounds with any active area selection; never draw out-of-scope features.
+ var west=bounds.getWest(),east=bounds.getEast(),south=bounds.getSouth(),north=bounds.getNorth();
+ if(m.spatial){
+   west=Math.max(west,m.spatial.west);east=Math.min(east,m.spatial.east);
+   south=Math.max(south,m.spatial.south);north=Math.min(north,m.spatial.north);
+   if(west>=east||south>=north)return;
+ }
+ var bbox={xmin:west,ymin:south,xmax:east,ymax:north,spatialReference:{wkid:4326}};
  var p={where:m.where||'1=1',geometry:JSON.stringify(bbox),geometryType:'esriGeometryEnvelope',
    spatialRel:'esriSpatialRelIntersects',outFields:'*',returnGeometry:'true',outSR:4326,
    resultRecordCount:500};
@@ -870,5 +890,5 @@ if(window.matchMedia){
  });
 }
 window.GISEnhancements={renderData,renderIntro,renderOverviewAddon,onMap,refreshVectorOverlay,renderCompare,renderConnections,beforeNavigate,afterNavigate,
- getModel,currentWhere,spatialParams,setupExtras,resetSensitive};
+ getModel,currentWhere,spatialParams,buildWhere,loadRows,loadCount,oidField,setupExtras,resetSensitive};
 })();

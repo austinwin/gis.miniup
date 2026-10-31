@@ -616,7 +616,8 @@
       ['Folders', (d.folders || []).length, 'Available directories'],['Services', (d.services || []).length, 'Published endpoints'],['Version', d.currentVersion || '—', 'ArcGIS Server'],['Access', 'By server', 'Permissions determined by the ArcGIS server']
     ];
     if (type === 'service') return [['Layers', (d.layers || []).length, 'Map / feature layers'],['Tables', (d.tables || []).length, 'Nonspatial tables'],['Version', d.currentVersion || '—', 'ArcGIS Server'],['Capabilities', short(d.capabilities || '—', 23), 'Service operations']];
-    return [['Layer ID', d.id === undefined ? '—' : d.id, 'Resource identifier'],['Fields', (d.fields || []).length, 'Schema columns'],['Geometry', short((d.geometryType || d.type || '—').replace('esriGeometry', ''), 18), 'Layer structure'],['Max records', d.maxRecordCount || '—', 'Server limit']];
+    var count=queryCapable()&&window.GISEnhancements?window.GISEnhancements.getModel().count:null;
+    return [['Records',count===null||count===undefined?'—':count,'Matching current filters'],['Fields', (d.fields || []).length, 'Schema columns'],['Geometry', short((d.geometryType || d.type || '—').replace('esriGeometry', ''), 18), 'Layer structure'],['Max records', d.maxRecordCount || '—', 'Server limit']];
   }
   function renderStats() {
     var host=clear($('statGrid'));
@@ -632,23 +633,39 @@
   function queryCapable() { var d = state.data || {}; return resourceType(state.url) === 'layer' && d.type !== 'Group Layer' && (Array.isArray(d.fields) || Boolean(d.advancedQueryCapabilities)); }
 
   function availableTabs() {
+    if(queryCapable()){
+      var views=[['data','Explore'],['analyze','Analyze']];
+      if(mapCapable())views.push(['map','Map']);
+      views.push(['schema','Fields'],['overview','Overview']);
+      if(fullExportCapable())views.push(['export','Export']);
+      views.push(['advanced','Advanced']);return views;
+    }
     var arr=[['overview','Overview']];
-    if(queryCapable())arr.push(['data','Data']);
     if(mapCapable())arr.push(['map','Map']);
     if(fullExportCapable())arr.push(['export','Export']);
-    arr.push(['advanced','Advanced']);
-    return arr;
+    arr.push(['advanced','Advanced']);return arr;
   }
   function setTab(tab) {
     if(state.tab==='map')cleanupMap();
+    if(window.GISWorkspace)window.GISWorkspace.clearInspector();
     state.tab=tab;renderTabs();renderContent();
   }
   function renderTabs() {
     var host=clear($('tabs')),tabs=availableTabs();
-    if(!tabs.some(function(x){return x[0]===state.tab;}))state.tab='overview';
-    tabs.forEach(function(t){
+    if(!tabs.some(function(x){return x[0]===state.tab;}))state.tab=tabs[0][0];
+    if(!queryCapable()){
+      tabs.forEach(function(t){host.appendChild(btn(t[1],'tab'+(state.tab===t[0]?' active':''),function(){setTab(t[0]);}));});
+      return;
+    }
+    tabs.filter(function(t){return ['data','analyze','map'].includes(t[0]);}).forEach(function(t){
       host.appendChild(btn(t[1],'tab'+(state.tab===t[0]?' active':''),function(){setTab(t[0]);}));
     });
+    var remainder=tabs.filter(function(t){return !['data','analyze','map'].includes(t[0]);});
+    var more=el('details','gx-more-tabs'+(remainder.some(function(t){return t[0]===state.tab;})?' active':''));
+    var summary=el('summary','',remainder.find(function(t){return t[0]===state.tab;})?.[1]||'More');
+    var menu=el('div','gx-more-menu');
+    remainder.forEach(function(t){menu.appendChild(btn(t[1],state.tab===t[0]?'active':'',function(){more.open=false;setTab(t[0]);}));});
+    append(more,summary,menu);host.appendChild(more);
   }
   function card(title, subtitle) { var c = el('div', 'card'), head = el('div', 'card-head'), side = el('div'); append(side, el('h3', '', title)); if (subtitle) append(side, el('p', '', subtitle)); head.appendChild(side); c.appendChild(head); return {card: c, head: head}; }
   function detailList(items) { var dl = el('dl', 'details'); items.forEach(function (row) { append(dl, el('dt', '', row[0]), el('dd', '', textify(row[1]))); }); return dl; }
@@ -1355,6 +1372,19 @@
       transparent:'true',dpi:96,f:'image'
     };
     var path=urlParts(state.url);
+    // Keep MapServer image layers in the same attribute-filter scope as the table.
+    if(/\/MapServer\/\d+$/i.test(new URL(state.url).pathname)&&window.GISEnhancements){
+      try{
+        var queryWhere=window.GISEnhancements.buildWhere(window.GISEnhancements.getModel());
+        if(queryWhere!=='1=1'){
+          var definitions={};definitions[path[path.length-1]]=queryWhere;
+          opts.layerDefs=JSON.stringify(definitions);
+        }
+      }catch(error){
+        var mapWarning=$('mapAuthWarning');
+        if(mapWarning)mapWarning.textContent='Unable to apply map filter: '+error.message;
+      }
+    }
     if(Array.isArray(state.visibleMapLayers))opts.layers=state.visibleMapLayers.length?'show:'+state.visibleMapLayers.join(','):'hide:'+((state.data.layers||[]).map(function(l){return l.id}).join(','));
     else if(/^\d+$/.test(path[path.length-1]||''))opts.layers='show:'+path[path.length-1];
     var base=mapRoot()+'/export', token=scopedToken(base);
@@ -1650,6 +1680,8 @@
     if (!state.data) return;
     if (state.tab === 'overview') renderOverview(host);
     else if(state.tab==='data' && window.GISEnhancements)window.GISEnhancements.renderData(host);
+    else if(state.tab==='analyze' && window.GISWorkspace)window.GISWorkspace.renderAnalyze(host);
+    else if(state.tab==='schema')renderFields(host);
     else if (state.tab === 'export') renderFullExport(host);
     else if (state.tab === 'map') renderMap(host);
     else if(state.tab==='advanced')renderAdvanced(host);
@@ -1671,6 +1703,7 @@
       state.focusBBox=null;
       state.spatialDrawing=false;
     }
+    if(window.GISWorkspace)window.GISWorkspace.clearInspector();
     if(window.GISEnhancements)window.GISEnhancements.beforeNavigate(url);
     var id=++state.request;
     var previousRoot=state.root;
@@ -1689,6 +1722,7 @@
       var data=await fetchData(jsonUrl(url));
       if(id!==state.request)return;
       state.data=data;
+      if(queryCapable())state.tab='data';
       state.children=childrenFor(data,url);
       if(window.GISEnhancements)window.GISEnhancements.afterNavigate(url,data);
       // Record successful visits by server root, not by individual layer URL.
@@ -1846,7 +1880,7 @@
     navigate:navigate,setTab:setTab,renderContent:renderContent,
     element:el,button:btn,titleFor:titleFor,resourceType:resourceType,scopedToken:scopedToken,
     createCard:card,showAlert:showAlert,formatNum:formatNum,mapRoot:mapRoot,
-    refreshOverlay:refreshOverlay,table:table,esriToGeoGeometry:esriToGeoGeometry
+    refreshOverlay:refreshOverlay,table:table,esriToGeoGeometry:esriToGeoGeometry,renderStats:renderStats
   };
 
   setupSidebarResize();
