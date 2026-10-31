@@ -1359,3 +1359,67 @@ body.gis-resizing,body.gis-resizing *{cursor:col-resize!important;user-select:no
 @container (max-width:670px) {
   .main .intro-tools { grid-column:1/-1; }
 }
+
+
+/* Data explorer: compact controls, server value pickers and mobile record cards. */
+.ge-value-input{display:flex;align-items:center;gap:6px;min-width:0}
+.ge-value-input>.ge-input,.ge-value-input>.ge-select{min-width:0;flex:1}
+.ge-value-input>.ge-secondary{flex:none;min-height:39px}
+.ge-unique-panel{grid-column:1/-1;border:1px solid #dce7f0;background:#f8fafc;border-radius:8px;padding:12px;min-width:0}
+.ge-unique-heading{font-size:12px;font-weight:700;color:#2d526e;margin-bottom:8px}
+.ge-unique-search{display:flex;gap:7px;align-items:center}
+.ge-unique-search>.ge-input{min-width:0;flex:1}
+.ge-unique-list{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px;max-height:225px;overflow-y:auto;overscroll-behavior:contain;margin-top:9px}
+.ge-unique-item{font-size:12px;padding:7px 9px;border-radius:5px;background:#fff;border:1px solid #d2deea;white-space:normal;text-align:left;overflow-wrap:anywhere;max-width:100%}
+.ge-unique-item:hover,.ge-unique-item:focus-visible{background:#e7f1fb;border-color:#94badb}
+.ge-unique-footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:9px}
+.ge-column-config{position:relative;min-width:0}
+.ge-column-config>summary{cursor:pointer;list-style:none;border:1px solid #cdd8e2;border-radius:6px;color:#215680;background:#fff;padding:9px 11px;font-size:12.5px;font-weight:650;white-space:nowrap}
+.ge-column-config>summary::after{content:' ▾'}
+.ge-column-config>summary::-webkit-details-marker{display:none}
+.ge-column-panel{position:absolute;z-index:10;top:calc(100% + 4px);left:0;width:min(315px,calc(100vw - 52px));max-height:330px;overflow:auto;background:#fff;border:1px solid #cbd9e6;border-radius:8px;box-shadow:0 8px 26px #193b611c;padding:11px}
+.ge-column-options{display:grid;grid-template-columns:1fr;gap:3px;margin-top:8px}
+.ge-column-options label{display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:12px;color:#324c64;overflow-wrap:anywhere}
+.ge-column-options input{flex:none;accent-color:#1e659e}
+.ge-table-meta{font-size:12px;color:#60768a;margin:7px 0}
+.ge-mobile-records{display:none}
+.ge-record-card{border:1px solid #dce6ef;border-radius:8px;background:#fff;padding:11px 12px;min-width:0}
+.ge-record-card.ge-row-selected{border-color:#8db4d9}
+.ge-record-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.ge-record-top label{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#20384f;min-width:0}
+.ge-record-top input{width:19px;height:19px;accent-color:#1e659e}
+.ge-record-preview{display:grid;grid-template-columns:minmax(84px,37%) minmax(0,1fr);gap:6px 9px;margin:0;font-size:12px}
+.ge-record-preview dt{color:#64778a;font-weight:600;overflow-wrap:anywhere}
+.ge-record-preview dd{margin:0;color:#20384f;overflow-wrap:anywhere}
+@media(max-width:700px){
+ .ge-workspace{gap:11px}
+ .ge-card{padding:12px}
+ .ge-results-head{gap:7px}
+ .ge-results-head .ge-count{font-size:11px}
+ .ge-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .ge-actions button{width:100%;min-width:0;white-space:normal;min-height:40px;line-height:1.35}
+ .ge-filter-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 32px}
+ .ge-filter-row>.ge-value-input{grid-column:1/-1;grid-row:2}
+ .ge-filter-row>.ge-quiet{grid-column:3;grid-row:1;align-self:start}
+ .ge-unique-panel{grid-column:1/-1}
+ .ge-unique-search{flex-wrap:wrap}
+ .ge-unique-search>.ge-input{flex-basis:100%}
+ .ge-controls{align-items:center}
+ .ge-controls .ge-select{max-width:none;flex:1 1 125px}
+ .ge-column-panel{position:static;width:100%;max-height:260px;box-shadow:none;margin-top:7px}
+ .ge-table-scroll{overflow:visible;max-height:none;border:0}
+ .ge-data-table{display:none}
+ .ge-mobile-records{display:grid;gap:8px}
+ .ge-pagination{justify-content:space-between}
+ .ge-pagination .ge-secondary{min-height:40px}
+ .ge-detail-scroll{max-height:none}
+}
+
+/* Keep the action toolbar tucked away on narrow screens. */
+.ge-action-menu{min-width:0}
+.ge-action-menu>summary{display:none}
+.ge-action-menu>.ge-actions{margin-top:2px}
+@media(max-width:700px){
+ .ge-action-menu>summary{display:list-item;cursor:pointer;padding:10px 12px;border:1px solid #d5e1eb;border-radius:6px;background:#f7fafc;color:#285d89;font-size:12.5px;font-weight:650}
+ .ge-action-menu[open]>.ge-actions{margin:10px 0 0;padding:0 0 9px}
+}

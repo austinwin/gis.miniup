@@ -694,10 +694,10 @@
     }
     if (!state.children.length && !hasMeta && type === 'root') host.appendChild(el('div', 'empty', 'The response did not list any folders or services.'));
   }
-  function table(headers, rows) {
+  function table(headers, rows, fields) {
     var wrap = el('div', 'table-scroll'), t = el('table', 'data-table'), thead = el('thead'), tr = el('tr'), tbody = el('tbody');
     headers.forEach(function (h) { tr.appendChild(el('th', '', h)); }); thead.appendChild(tr);
-    rows.forEach(function (row) { var r = el('tr'); row.forEach(function (v) { var cell = el('td', '', typeof v === 'object' && v !== null ? JSON.stringify(v) : textify(v)); cell.title = textify(v); r.appendChild(cell); }); tbody.appendChild(r); });
+    rows.forEach(function (row) { var r = el('tr'); row.forEach(function (v, i) { var cell = el('td', '', fields ? window.GISFields.formatNamed(headers[i],v,fields) : (typeof v === 'object' && v !== null ? JSON.stringify(v) : textify(v))); cell.title = textify(v); r.appendChild(cell); }); tbody.appendChild(r); });
     append(t, thead, tbody); wrap.appendChild(t); return wrap;
   }
   function renderFields(host) {
@@ -1299,7 +1299,7 @@
     if (features.length) append(tool, btn('↓ CSV', 'action-button', function () { downloadBlob([keys.map(csvValue).join(',')].concat(attrs.map(function (a) { return keys.map(function (k) { return csvValue(a[k]); }).join(','); })).join('\n'), 'gis-query.csv', 'text/csv;charset=utf-8'); }), btn('↓ JSON', 'action-button', function () { downloadBlob(JSON.stringify(payload, null, 2), 'gis-query.json', 'application/json'); }));
     c.card.appendChild(tool);
     c.card.appendChild(el('p', 'result-meta', formatNum(features.length) + ' records returned' + (payload.exceededTransferLimit ? ' · More records may be available' : '') + (payload.spatialReference ? ' · WKID ' + (payload.spatialReference.wkid || payload.spatialReference.latestWkid || '—') : '')));
-    if (features.length) c.card.appendChild(table(keys, attrs.map(function (a) { return keys.map(function (k) { return a[k]; }); })));
+    if (features.length) c.card.appendChild(table(keys, attrs.map(function (a) { return keys.map(function (k) { return a[k]; }); }),state.data?.fields||[]));
     else c.card.appendChild(el('div', 'empty', 'No matching records. Check the WHERE clause.'));
     var pager = el('div', 'pager');
     var prev = btn('← Previous', 'action-button', function () { queryRecords(Math.max(0, state.offset - r.args.resultRecordCount)); }); prev.disabled = state.offset <= 0;
@@ -1482,7 +1482,7 @@
         var label=identifyFieldAlias(key,item);
         var term=el('dt','',label);
         if(label!==key)term.title=key;
-        var val=el('dd','',identifyValue(attrs[key]));
+        var val=el('dd','',window.GISFields.formatNamed(key,attrs[key],String(item.layerId)===urlParts(state.url).slice(-1)[0]?state.data?.fields:[]));
         append(row,term,val);
         list.appendChild(row);
       });
