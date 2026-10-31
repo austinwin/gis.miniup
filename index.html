@@ -8,6 +8,9 @@
   <title>GIS · ArcGIS REST Explorer</title>
   <link rel="stylesheet" href="./styles.css?v=20261031-no-oid" />
   <link rel="stylesheet" href="./gis-workspace.css?v=20261031-easy" />
+  <link rel="stylesheet" href="./gis-map-studio.css?v=20261031" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -125,10 +128,13 @@
     </section>
   </div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js" defer></script>
   <script src="./gis-field-utils.js?v=20261031" defer></script>
   <script src="./gis-enhancements.js?v=20261031-no-oid" defer></script>
   <script src="./gis-workspace.js?v=20261031-easy" defer></script>
+  <script src="./gis-map-studio.js?v=20261031" defer></script>
   <script src="./server-history.js" defer></script>
-  <script src="./app.js?v=20261031-easy" defer></script>
+  <script src="./app.js?v=20261031-mapstudio" defer></script>
 </body>
 </html>

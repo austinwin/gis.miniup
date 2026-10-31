@@ -1,0 +1,134 @@
+/* GIS Map Studio: compact layer manager and map-first design */
+.ms-shell{--ms-line:#dde5ed;--ms-blue:#215b96;--ms-text:#24384d;display:flex;flex-direction:column;min-width:0;width:100%;background:#fff;border:1px solid var(--ms-line);border-radius:10px;overflow:hidden;box-shadow:0 4px 22px rgba(21,47,82,.045)}
+.ms-shell *{box-sizing:border-box}
+.ms-shell button,.ms-shell input,.ms-shell select{font:inherit}
+.ms-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 13px;background:#fff;border-bottom:1px solid var(--ms-line);min-width:0;flex-wrap:wrap}
+.ms-brand{font-size:16px;font-weight:780;letter-spacing:-.35px;color:#16334e}
+.ms-badge{font-size:10px;letter-spacing:.1px;font-weight:700;color:#55728d;background:#eef3f8;padding:3px 7px;border-radius:5px;margin-right:auto}
+.ms-top-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-width:0}
+.ms-primary,.ms-secondary,.ms-small,.ms-icon{background:#fff;border:1px solid #cad7e4;border-radius:6px;color:#325b80;cursor:pointer;font-size:12px;line-height:1.25;font-weight:670;padding:8px 10px;white-space:nowrap;min-height:34px}
+.ms-primary{background:#205d9b;border-color:#205d9b;color:#fff}
+.ms-primary:hover{background:#144a80}
+.ms-secondary:hover,.ms-small:hover,.ms-icon:hover{background:#edf5fc;border-color:#9fbbd4}
+.ms-primary:disabled,.ms-secondary:disabled,.ms-small:disabled,.ms-icon:disabled{opacity:.4;cursor:not-allowed}
+.ms-basemap,.ms-select,.ms-input{background:#fff;border:1px solid #cbd7e3;border-radius:7px;color:#334c65;min-width:0;padding:8px 10px;font-size:12px;outline-offset:1px}
+.ms-basemap{max-width:215px;min-height:35px}
+.ms-body{display:grid;grid-template-columns:minmax(238px,295px) minmax(0,1fr);min-height:0;height:min(77dvh,770px);min-height:500px}
+.ms-sidebar{min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:#fff;border-right:1px solid var(--ms-line)}
+.ms-sidebar[hidden]{display:none!important}
+.ms-shell:not(.ms-panel-visible) .ms-body{grid-template-columns:minmax(0,1fr)}
+.ms-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-bottom:1px solid var(--ms-line);background:#fafbfd;padding:4px 6px 0;flex:none}
+.ms-tab{border:0;border-bottom:2px solid transparent;background:transparent;padding:9px 5px;color:#65798d;cursor:pointer;font-weight:680;font-size:12px;min-width:0}
+.ms-tab.active{color:#205d9b;border-bottom-color:#2169b0}
+.ms-tab:hover{background:#edf3fa}
+.ms-panel{min-width:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:13px 12px 22px;scrollbar-width:thin;scrollbar-color:#b8c8d7 #f7f9fb}
+.ms-panel h3{font-size:14px;font-weight:730;color:#274059;margin:10px 0}
+.ms-panel-title,.ms-browse-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.ms-panel-title strong,.ms-browse-heading strong{font-size:14px;color:#273e55}
+.ms-hint{font-size:11.5px;color:#718498;line-height:1.55;margin:4px 0 11px}
+.ms-empty{font-size:12px;color:#74869b;padding:13px;border:1px dashed #d6e1eb;border-radius:8px;line-height:1.65}
+.ms-layer-row{border:1px solid #dbe4eb;border-radius:8px;padding:10px;margin:9px 0;background:#fff;min-width:0}
+.ms-layer-row.is-selected{border-color:#9cc3e8;background:#f9fcff}
+.ms-layer-main{display:flex;align-items:center;gap:8px;min-width:0}
+.ms-layer-main input[type=checkbox]{width:17px;height:17px;flex:none;accent-color:#266aa7;cursor:pointer}
+.ms-layer-names{min-width:0;flex:1}
+.ms-layer-names strong{display:block;font-size:12px;line-height:1.35;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;color:#2c4359}
+.ms-layer-names small{display:block;color:#8090a0;font-size:10px;margin-top:2px}
+.ms-swatch{width:17px;height:17px;border:2px solid #2775a9;border-radius:5px;flex:none}
+.ms-layer-actions{display:flex;align-items:center;gap:4px;margin-top:9px;flex-wrap:wrap}
+.ms-layer-actions .ms-small,.ms-layer-actions .ms-icon{font-size:10.5px;padding:6px 7px;min-height:30px}
+.ms-layer-actions .ms-icon{width:29px;padding:6px}
+.ms-danger{color:#ae4842;border-color:#e3d5d5}
+.ms-danger:hover{background:#fff1f0}
+.ms-layer-warning{font-size:11px;line-height:1.5;color:#926233;margin:8px 0 1px}
+.ms-mapwrap{position:relative;min-height:0;min-width:0;overflow:hidden;background:#e8eef4}
+.ms-canvas{position:absolute;inset:0}
+.ms-canvas.leaflet-container{height:100%;width:100%;background:#e8edf3;z-index:1}
+.ms-notice{position:absolute;left:14px;bottom:52px;right:14px;z-index:450;max-width:520px;margin:0 auto;border:1px solid #c7dbec;border-radius:8px;padding:9px 14px;background:rgba(248,252,255,.97);color:#315b7e;font-size:11px;line-height:1.5;box-shadow:0 3px 14px #15314b20;pointer-events:auto}
+.ms-notice.ms-error{border-color:#ecc6c1;background:#fff8f7;color:#894a41}
+.ms-map-footer{position:absolute;bottom:0;left:0;right:0;z-index:445;display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 12px;color:#526b7f;background:rgba(255,255,255,.95);font-size:10.5px;pointer-events:none}
+.ms-map-footer span:last-child{text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-detail{position:absolute;z-index:650;top:14px;bottom:46px;right:12px;width:min(340px,calc(100% - 24px));background:#fff;border:1px solid #cbdce9;border-radius:9px;padding:13px;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 12px 32px #122f4b33}
+.ms-detail[hidden]{display:none!important}
+.ms-detail-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.ms-detail-head strong{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#27435f}
+.ms-detail-list{display:grid;grid-template-columns:40% 60%;margin:0 0 15px;font-size:11.5px}
+.ms-detail-list dt,.ms-detail-list dd{margin:0;padding:7px 4px;line-height:1.4;overflow-wrap:anywhere;border-bottom:1px solid #edf1f5}
+.ms-detail-list dt{color:#748699;font-weight:650}
+.ms-detail-list dd{color:#2a425a}
+.ms-control{display:flex;flex-direction:column;gap:7px;min-width:0;color:#566e86;font-size:11.5px}
+.ms-control>span{font-weight:600}
+.ms-control input[type=color]{height:35px;width:100%;padding:3px 5px;border:1px solid #d8e2eb;border-radius:6px;cursor:pointer}
+.ms-control input[type=range]{width:100%;accent-color:#24659d;min-height:27px}
+.ms-style-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 11px;margin:13px 0 16px}
+.ms-modes{display:flex;gap:6px;margin:13px 0 10px;flex-wrap:wrap}
+.ms-mode{flex:1;min-width:68px;border:1px solid #cedeea;border-radius:7px;padding:10px 6px;background:#fff;color:#4d647a;font-size:12px;font-weight:650;cursor:pointer}
+.ms-mode.active{background:#e6f2ff;color:#1c568e;border-color:#8db9dd}
+.ms-label-editor{border-top:1px solid #e4e9ef;padding-top:13px;display:flex;flex-direction:column;gap:10px}
+.ms-toggle{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:650;color:#3e536c}
+.ms-toggle input{width:17px;height:17px;accent-color:#1d6ca9}
+.ms-feature-label{border:1px solid #c4d4e2!important;border-radius:4px!important;background:rgba(255,255,255,.95)!important;color:#233b50!important;box-shadow:none!important;font-size:11px!important;font-weight:600!important;padding:2px 5px!important}
+.ms-feature-label:before{display:none}
+.ms-cluster-icon{background:none;border:0}
+.ms-cluster-symbol{display:block;width:18px;height:18px;border-radius:50%;border:3px solid #1976b9;box-shadow:0 1px 4px rgba(18,41,64,.2)}
+.ms-add-form{display:flex;gap:7px;align-items:stretch;flex-wrap:wrap}
+.ms-add-form input{flex:1 1 100%;height:40px;min-width:0}
+.ms-add-form button{min-width:100px}
+.ms-divider{border-top:1px solid #e5ebf1;margin:17px 0}
+.ms-browse{display:flex;flex-direction:column;gap:7px;min-width:0}
+.ms-browse>button{width:100%;text-align:left;white-space:normal}
+.ms-browse-heading{margin-top:8px}
+.ms-browse>.ms-input{width:100%;min-height:37px}
+.ms-browser-list{overflow:auto;max-height:300px;display:flex;flex-direction:column;gap:3px}
+.ms-browser-item{display:block;width:100%;min-width:0;text-align:left;font-size:11.5px;color:#3d5b76;padding:9px 8px;border:0;border-radius:6px;background:#f9fbfd;overflow-wrap:anywhere;cursor:pointer}
+.ms-browser-item:hover{background:#eaf3fe;color:#1d5b97}
+.ms-shell .leaflet-control-zoom a{color:#2b516d}
+@media(max-width:1100px){.ms-body{grid-template-columns:240px minmax(0,1fr)}.ms-top-controls{gap:5px}.ms-basemap{max-width:165px}}
+@media(max-width:700px){
+ .ms-shell{border-left:0;border-right:0;border-radius:0;margin:0 -13px;width:calc(100% + 26px)}
+ .ms-topbar{padding:9px 10px;gap:7px}
+ .ms-brand{font-size:15px}
+ .ms-badge{font-size:9px}
+ .ms-top-controls{flex:1 1 100%;width:100%;gap:5px}
+ .ms-top-controls>.ms-basemap{flex:1;max-width:none;min-width:120px}
+ .ms-top-controls>.ms-primary,.ms-top-controls>.ms-secondary{padding:7px 8px;min-height:35px;font-size:11px}
+ .ms-body{position:relative;display:block;height:calc(100dvh - 255px);min-height:440px;max-height:760px}
+ .ms-mapwrap{position:absolute;inset:0}
+ .ms-sidebar{position:absolute;left:8px;right:8px;bottom:46px;height:min(58dvh,450px);max-height:calc(100% - 55px);width:auto;z-index:600;border:1px solid #ccdaea;border-radius:11px;box-shadow:0 14px 42px rgba(13,40,67,.23);background:#fff}
+ .ms-shell:not(.ms-panel-visible) .ms-sidebar{display:none}
+ .ms-panel{padding:10px 12px 18px}
+ .ms-tabs{padding-top:3px}
+ .ms-canvas{width:100%;height:100%}
+ .ms-map-footer{font-size:10px;padding:7px}
+ .ms-detail{top:12px;left:8px;right:8px;width:auto;bottom:45px}
+ .ms-notice{left:9px;right:9px;bottom:42px}
+ .ms-leaflet-control{font-size:11px}
+ .ms-shell .leaflet-control-zoom{margin-left:12px;margin-top:12px}
+}
+@media(max-width:375px){
+ .ms-shell{margin:0 -13px}
+ .ms-top-controls>.ms-primary,.ms-top-controls>.ms-secondary{font-size:10px;padding:7px 5px}
+ .ms-top-controls>.ms-basemap{font-size:10px;min-width:95px}
+ .ms-brand{font-size:14px}
+}
+
+/* Map actions live over the canvas; never push the map below a long legend. */
+.ms-floating-tools{position:absolute;right:12px;top:12px;z-index:440;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 80px)}
+.ms-map-tool{border:1px solid #ced9e2;border-radius:6px;background:rgba(255,255,255,.96);box-shadow:0 2px 9px #163b511d;color:#2b5679;min-height:33px;padding:7px 10px;font-size:11px;font-weight:650;cursor:pointer;white-space:nowrap}
+.ms-map-tool:hover,.ms-map-tool:focus-visible{background:#e9f4ff;border-color:#a3c1da}
+.ms-query-controls{border:1px solid #e3eaf0;border-radius:7px;margin:14px 0 8px;padding:10px;background:#fafcff}
+.ms-query-controls>summary{cursor:pointer;color:#375e82;font-size:12px;font-weight:650}
+.ms-where-form{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.ms-where-form .ms-input{flex:1;min-width:0}
+@media(max-width:700px){
+ .ms-floating-tools{right:8px;top:9px;max-width:calc(100% - 70px);gap:4px}
+ .ms-map-tool{font-size:10px;padding:6px 7px;min-height:31px}
+}
+
+.ms-more{position:relative;flex:none}
+.ms-more>summary{display:block;list-style:none;cursor:pointer;min-height:34px;padding:8px 11px;border:1px solid #cad7e4;border-radius:6px;color:#325b80;font-size:12px;font-weight:670;background:#fff}
+.ms-more>summary::-webkit-details-marker{display:none}
+.ms-more>summary:after{content:" ▾";color:#7790a3}
+.ms-more-menu{position:absolute;z-index:990;right:0;top:calc(100% + 6px);display:flex;flex-direction:column;gap:5px;min-width:195px;padding:8px;border:1px solid #d2dfe9;border-radius:8px;box-shadow:0 10px 30px rgba(15,41,66,.17);background:#fff}
+.ms-more-menu button{width:100%;text-align:left}
+@media(max-width:700px){.ms-more>summary{padding:7px 9px;min-height:35px;font-size:11px}}

@@ -632,7 +632,10 @@
       host.appendChild(c);
     });
   }
-  function mapCapable() { return /\/MapServer(\/\d+)?$/i.test(new URL(state.url).pathname) || /\/FeatureServer\/\d+$/i.test(new URL(state.url).pathname); }
+  function mapCapable() {
+    // Any ArcGIS REST directory can open the map and browse its published layers.
+    return Boolean(state.url && rootOf(state.url));
+  }
   function queryCapable() { var d = state.data || {}; return resourceType(state.url) === 'layer' && d.type !== 'Group Layer' && (Array.isArray(d.fields) || Boolean(d.advancedQueryCapabilities)); }
 
   function availableTabs() {
@@ -1337,6 +1340,7 @@
     if (p) { p.hidden=true; clear(p); }
   }
   function cleanupMap() {
+    if(window.GISMapStudio)window.GISMapStudio.cleanup();
     state.mapImageSeq=(state.mapImageSeq||0)+1;
     state.vectorSeq=(state.vectorSeq||0)+1;
     if(state.vectorLayer && state.map){state.map.removeLayer(state.vectorLayer);state.vectorLayer=null;}
@@ -1361,6 +1365,10 @@
   }
 
   function refreshOverlay() {
+    if(window.GISMapStudio?.getState()){
+      window.GISMapStudio.refresh();
+      return;
+    }
     if(!state.map)return;
     if(/\/FeatureServer\/\d+$/i.test(new URL(state.url).pathname)){
       if(window.GISEnhancements)window.GISEnhancements.refreshVectorOverlay(state.map);
@@ -1628,6 +1636,11 @@
     }
   }
   function renderMap(host) {
+    if(window.GISMapStudio){
+      cleanupMap();
+      window.GISMapStudio.mount(host);
+      return;
+    }
     var c=card('Live map preview',/\/FeatureServer\/\d+$/i.test(new URL(state.url).pathname)
       ? 'Basemap: Esri World Street Map · queried features: ArcGIS FeatureServer'
       : 'Basemap: Esri World Street Map · service image: ArcGIS export endpoint');
