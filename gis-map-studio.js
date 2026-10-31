@@ -168,7 +168,11 @@ function clearArea(s){
 function setDrawing(s,active){
  s.drawing=active;s.drawFirst=null;
  s.map.getContainer().style.cursor=active?'crosshair':'';
- if(s.drawButton)s.drawButton.textContent=active?'Cancel box':'Draw box';
+ if(s.drawButton)s.drawButton.textContent=active?'Cancel drawing':'Draw selection box';
+ if(s.mapTools){
+  var summary=s.mapTools.querySelector('summary');
+  if(summary)summary.textContent=active?'Drawing…':'Tools';
+ }
  if(active)notice(s,'Tap two opposite corners on the map to filter records.');
  else notice(s,'');
 }
@@ -384,11 +388,22 @@ async function addLayer(s,url,options){
  if(s.layers.length===1)fitExtent(s,layer.extent);
  return layer;
 }
+function closePanel(s,restoreFocus){
+ if(!isCurrent(s))return;
+ s.sidebar.hidden=true;s.shell.classList.remove('ms-panel-visible');
+ if(s.layersButton)s.layersButton.setAttribute('aria-expanded','false');
+ if(s.addButton)s.addButton.setAttribute('aria-expanded','false');
+ if(restoreFocus&&s.layersButton)s.layersButton.focus?.({preventScroll:true});
+ if(window.innerWidth>700)setTimeout(()=>{if(isCurrent(s))s.map.invalidateSize();},50);
+}
 function actionPane(s,tab){
- s.panel=tab;
- s.sidebar.hidden=false;
+ if(!isCurrent(s))return;
+ s.panel=tab;s.sidebar.hidden=false;
  s.shell.classList.add('ms-panel-visible');
+ if(s.layersButton)s.layersButton.setAttribute('aria-expanded','true');
+ if(s.addButton)s.addButton.setAttribute('aria-expanded','true');
  renderPanel(s);
+ if(window.innerWidth>700)setTimeout(()=>{if(isCurrent(s))s.map.invalidateSize();},50);
 }
 function fieldSelect(value,fields,cb,emptyLabel){
  var sel=el('select','ms-select');
@@ -406,6 +421,7 @@ function renderPanel(s){
  if(!isCurrent(s))return;
  s.panelContent.replaceChildren();
  s.tabButtons.forEach(b=>{var on=b.dataset.panel===s.panel;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});
+ if(s.panelHeading)s.panelHeading.textContent=({layers:'Layers',add:'Add layers',style:'Style layer'})[s.panel]||'Layers';
  if(s.panel==='layers')showLayers(s);
  else if(s.panel==='add')showAdd(s);
  else if(s.panel==='style')showStyle(s);
@@ -413,7 +429,7 @@ function renderPanel(s){
 function showLayers(s){
  var p=s.panelContent;
  var head=el('div','ms-panel-title');
- add(head,el('strong','','Layers'),btn('+ Add','ms-primary',()=>actionPane(s,'add')));
+ add(head,el('strong','','Active layers'),btn('+ Add','ms-primary',()=>actionPane(s,'add')));
  p.appendChild(head);
  p.appendChild(el('p','ms-hint','Top layers draw above lower layers. Use arrows to change order.'));
  if(!s.layers.length){p.appendChild(el('p','ms-empty','No layers yet. Add a layer from this server or paste a URL.'));return;}
@@ -537,8 +553,7 @@ function showStyle(s){
 }
 function showAdd(s){
  var p=s.panelContent;
- p.appendChild(el('h3','','Add layers'));
- p.appendChild(el('p','ms-hint','Choose from the current ArcGIS server, or paste a public HTTPS ArcGIS layer URL.'));
+ p.appendChild(el('p','ms-hint','Browse this server or paste an HTTPS ArcGIS layer URL.'));
  var form=el('form','ms-add-form'),input=el('input','ms-input');input.type='url';
  input.required=true;input.placeholder='https://.../FeatureServer/0';input.setAttribute('aria-label','ArcGIS layer URL');
  form.addEventListener('submit',async event=>{
@@ -625,6 +640,7 @@ function cleanUp(){
  var s=session;
  if(!s)return;
  clearTimeout(s.timer);
+ if(s.escapeHandler)document.removeEventListener?.('keydown',s.escapeHandler);
  s.layers.forEach(l=>clearRender(s,l));
  if(s.focusLayer){try{s.map.removeLayer(s.focusLayer);}catch(e){}}
  if(s.baseLayer&&s.map){try{s.map.removeLayer(s.baseLayer);}catch(e){}}
@@ -649,13 +665,16 @@ function mount(host){
  Object.entries(BASEMAPS).forEach(([k,v])=>{var op=el('option','',v.name);op.value=k;basemap.appendChild(op);});
  basemap.addEventListener('change',()=>setBasemap(s,basemap.value));
  controls.appendChild(basemap);
- controls.appendChild(btn('+ Layer','ms-primary',()=>actionPane(s,'add')));
- controls.appendChild(btn('Layers','ms-secondary',()=>{
-  var open=!s.shell.classList.contains('ms-panel-visible');
-  s.shell.classList.toggle('ms-panel-visible',open);s.sidebar.hidden=!open;
-  if(open)renderPanel(s);
-  setTimeout(()=>{if(s.map)s.map.invalidateSize();},50);
- }));
+ var addButton=btn('+ Layer','ms-primary',()=>actionPane(s,'add'));
+ addButton.setAttribute('aria-controls','ms-layer-panel');addButton.setAttribute('aria-expanded','false');
+ s.addButton=addButton;controls.appendChild(addButton);
+ var layersButton=btn('Layers','ms-secondary',()=>{
+  if(s.shell.classList.contains('ms-panel-visible')&&s.panel==='layers')closePanel(s,false);
+  else actionPane(s,'layers');
+ });
+ layersButton.setAttribute('aria-controls','ms-layer-panel');
+ layersButton.setAttribute('aria-expanded','false');
+ s.layersButton=layersButton;controls.appendChild(layersButton);
  var more=el('details','ms-more'),summary=el('summary','','More');
  var menu=el('div','ms-more-menu');
  add(menu,
@@ -672,7 +691,12 @@ function mount(host){
  add(more,summary,menu);controls.appendChild(more);
  bar.appendChild(controls);shell.appendChild(bar);
  var body=el('div','ms-body'),side=el('aside','ms-sidebar');
- s.sidebar=side;side.setAttribute('aria-label','Map layer manager');
+ s.sidebar=side;side.id='ms-layer-panel';side.setAttribute('aria-label','Map layer manager');
+ var panelHeader=el('div','ms-panel-header'),panelHeading=el('strong','ms-panel-heading','Layers');
+ s.panelHeading=panelHeading;
+ var panelClose=btn('×','ms-panel-close',()=>closePanel(s,false),'Close layer panel');
+ panelClose.setAttribute('aria-label','Close layer panel');
+ add(panelHeader,panelHeading,panelClose);side.appendChild(panelHeader);
  var switcher=el('nav','ms-tabs');s.tabButtons=[];
  [['layers','Layers'],['add','Add'],['style','Style']].forEach(([k,label])=>{
   var t=btn(label,'ms-tab',()=>actionPane(s,k));t.dataset.panel=k;t.setAttribute('role','tab');s.tabButtons.push(t);switcher.appendChild(t);
@@ -683,15 +707,24 @@ function mount(host){
  var note=el('div','ms-notice');note.hidden=true;s.notice=note;
  var detail=el('aside','ms-detail');detail.hidden=true;s.detail=detail;
  var floating=el('div','ms-floating-tools');
- add(floating,
-  btn('Fit','ms-map-tool',()=>{
-    var l=focusedLayer(s),ext=l?.extent||C().state.data?.fullExtent||C().state.data?.extent;
-    if(!fitExtent(s,ext))notice(s,'No supported extent is available.',true);
-  },'Fit selected layer extent'),
-  btn('This area','ms-map-tool',()=>applyArea(s,viewBounds(s)),'Filter current Explore layer by visible map extent'));
- var drawBtn=btn('Draw box','ms-map-tool',()=>setDrawing(s,!s.drawing),'Tap two corners to select an area');
- s.drawButton=drawBtn;
- add(floating,drawBtn,btn('Clear area','ms-map-tool',()=>clearArea(s)));
+ floating.appendChild(btn('Fit','ms-map-tool',()=>{
+  var layer=focusedLayer(s),extent=layer?.extent||C().state.data?.fullExtent||C().state.data?.extent;
+  if(!fitExtent(s,extent))notice(s,'No supported extent is available.',true);
+ },'Fit selected layer extent'));
+ var mapTools=el('details','ms-map-tools'),mapSummary=el('summary','','Tools');
+ mapSummary.setAttribute('aria-label','Map selection tools');
+ var mapMenu=el('div','ms-map-tools-menu');
+ mapMenu.appendChild(btn('Use visible area','ms-tool-option',()=>{
+  mapTools.open=false;applyArea(s,viewBounds(s));
+ },'Filter Explore records to visible map'));
+ var drawBtn=btn('Draw selection box','ms-tool-option',()=>{
+  mapTools.open=false;setDrawing(s,!s.drawing);
+ },'Tap two corners to select a map area');
+ s.drawButton=drawBtn;mapMenu.appendChild(drawBtn);
+ mapMenu.appendChild(btn('Clear map selection','ms-tool-option',()=>{
+  mapTools.open=false;setDrawing(s,false);clearArea(s);
+ }));
+ add(mapTools,mapSummary,mapMenu);floating.appendChild(mapTools);s.mapTools=mapTools;
  var bottom=el('div','ms-map-footer');s.layerCount=el('span','','0 layers');
  var coord=el('span','','Pan to explore · zoom to load more detail');
  add(bottom,s.layerCount,coord);
@@ -723,6 +756,15 @@ function mount(host){
  });
  var desktop=window.innerWidth>700;
  s.sidebar.hidden=!desktop;s.shell.classList.toggle('ms-panel-visible',desktop);
+ s.layersButton.setAttribute('aria-expanded',String(desktop));
+ s.addButton.setAttribute('aria-expanded',String(desktop));
+ s.escapeHandler=event=>{
+  if(event.key==='Escape'&&isCurrent(s)){
+   if(s.mapTools?.open){s.mapTools.open=false;event.preventDefault();return;}
+   if(s.sidebar&&!s.sidebar.hidden){closePanel(s,true);event.preventDefault();}
+  }
+ };
+ document.addEventListener?.('keydown',s.escapeHandler);
  renderPanel(s);
  var remembered=workspaces.get(key);
  var current=baseService(core.state.url);

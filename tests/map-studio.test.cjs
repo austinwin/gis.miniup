@@ -69,7 +69,7 @@ class FakeNode{
  constructor(tag){this.tag=tag;this.children=[];this.style={};this.dataset={};
   this.listeners={};this.hidden=false;this.isConnected=true;
   this.value='';this.textContent='';
-  this.classList={add(){},remove(){},toggle(){},contains(){return false;}};
+  const classes=new Set();this.classList={add:c=>classes.add(c),remove:c=>classes.delete(c),toggle:(c,on)=>{if(on===undefined)on=!classes.has(c);on?classes.add(c):classes.delete(c);return on;},contains:c=>classes.has(c)};
  }
  appendChild(c){this.children.push(c);return c;}
  replaceChildren(...c){this.children=c;}
@@ -122,6 +122,44 @@ test('mobile opens a map-first workspace and loads the current feature layer',as
  assert.equal(mapState.layers[0].name,'Meters');
  assert.equal(mapState.layers[0].loaded,true);
  assert.equal(mapState.layers[0].count,1);
+ // Both toolbar buttons open the same panel, with correct section and a visible X.
+ assert.equal(mapState.sidebar.children[0].children[1].textContent,'×');
+ assert.equal(mapState.sidebar.children[0].children[1]['aria-label'],'Close layer panel');
+ assert.equal(mapState.addButton['aria-expanded'],'false');
+ mapState.addButton.listeners.click();
+ assert.equal(mapState.sidebar.hidden,false);
+ assert.equal(mapState.panel,'add');
+ assert.equal(mapState.panelHeading.textContent,'Add layers');
+ assert.equal(mapState.addButton['aria-expanded'],'true');
+ // "Layers" changes panels instead of unexpectedly closing Add.
+ mapState.layersButton.listeners.click();
+ assert.equal(mapState.panel,'layers');
+ assert.equal(mapState.sidebar.hidden,false);
+ assert.equal(mapState.panelHeading.textContent,'Layers');
+ mapState.sidebar.children[0].children[1].listeners.click();
+ assert.equal(mapState.sidebar.hidden,true);
+ assert.equal(mapState.layersButton['aria-expanded'],'false');
+ assert.equal(mapState.addButton['aria-expanded'],'false');
+ mapState.layersButton.listeners.click();
+ assert.equal(mapState.sidebar.hidden,false);
+ assert.equal(mapState.panel,'layers');
+ mapState.layersButton.listeners.click();
+ assert.equal(mapState.sidebar.hidden,true);
+ // Only two compact floating controls remain on the canvas.
+ const float=mapState.mapwrap.children.find(node=>node.children?.some(x=>x.tag==='details'));
+ assert.ok(float,'Floating map toolbar should exist');
+ assert.equal(float.children.length,2);
+ assert.equal(float.children[0].textContent,'Fit');
+ assert.equal(float.children[1].children[0].textContent,'Tools');
  mount.cleanup();
  assert.equal(state.map,null);
+});
+
+test('navigation More menu sits above map and Map Studio controls',()=>{
+ const css=fs.readFileSync(path.join(__dirname,'..','gis-map-studio.css'),'utf8');
+ assert.match(css,/#tabs:has\(\.gx-more-tabs\)\s*\{[^}]*z-index:\s*1200/s);
+ assert.match(css,/\.ms-topbar\s*\{[^}]*z-index:\s*30/s);
+ assert.match(css,/\.ms-panel-header\s*\{/);
+ assert.match(css,/\.ms-panel-close\s*\{/);
+ assert.match(css,/\.ms-map-tools-menu\s*\{/);
 });

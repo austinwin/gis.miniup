@@ -2,6 +2,12 @@
 
 The Map tab now opens a map-first, read-only layer composition workspace for ArcGIS REST servers. It is designed to offer common GIS inspection and cartography operations without replicating the full ArcGIS Pro desktop feature set.
 
+## Map panel and menu behavior (UI revision)
+
+On mobile, the **main app's More menu** now overlays the Map Studio surface rather than appearing behind its canvas controls. Map Studio's own More menu also displays above the map. **Layers, Add, and Style share a fixed panel header with an accessible X close button**, and Escape dismisses the panel or an open Tools menu. The Layers toolbar button switches to Layers if Add or Style is open, and toggles the panel when Layers is already displayed.
+
+The floating map toolbar has just **Fit** and **Tools**. Tools contains **Use visible area**, **Draw selection box**, and **Clear map selection**. This keeps the map usable on a small screen and puts optional selection actions one tap away. The panel header stays visible when scrolling a long list of layers.
+
 ## Everyday workflow
 
 Open **Map** from any ArcGIS directory, service, or layer. The current spatial layer (or a few default-visible layers from its service) loads automatically; otherwise click **+ Layer**. Browse the current server's folders, services, and published layers, or paste an HTTPS \`FeatureServer/{id}\` or \`MapServer/{id}\` URL. Show/hide layers, move them up/down, zoom to their extent, open their attribute table, or remove them. The map stays visible while working with the layer list. On mobile the list is a collapsible overlay and is initially closed.

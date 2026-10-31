@@ -140,3 +140,155 @@
 .main:has(.ms-shell) .breadcrumbs{height:42px}
 .main:has(.ms-shell) .tabs{margin-bottom:10px}
 @media(max-width:700px){.main:has(.ms-shell) .page-intro{padding:8px 0}.main:has(.ms-shell) .intro-titles h1{font-size:16px}}
+
+
+/* Map Studio UI refinement: keep both More menus above the map and controls. */
+/* Main app navigation is a sibling of the Map Studio content, so it needs
+   its own stacking layer, not merely a larger z-index on the dropdown. */
+#tabs:has(.gx-more-tabs){
+ position:relative;
+ z-index:1200;
+ overflow:visible;
+}
+#tabs .gx-more-tabs{position:relative}
+#tabs .gx-more-tabs[open]{z-index:1201}
+#tabs .gx-more-tabs .gx-more-menu{
+ position:absolute;
+ z-index:1202;
+ top:calc(100% + 4px);
+ max-height:min(55dvh,360px);
+ overflow-y:auto;
+ box-shadow:0 16px 35px rgba(19,40,65,.19);
+}
+.ms-shell{position:relative;z-index:0;isolation:isolate}
+.ms-topbar{position:relative;z-index:30;overflow:visible}
+.ms-body{position:relative;z-index:1}
+.ms-more[open]{z-index:100}
+.ms-more-menu{
+ z-index:101;
+ max-height:min(55dvh,360px);
+ overflow-y:auto;
+ min-width:210px;
+}
+.ms-more>summary:focus-visible,
+.ms-map-tools>summary:focus-visible,
+.ms-panel-close:focus-visible{outline:2px solid #3580c4;outline-offset:2px}
+
+/* Always-visible close control on Layers, Add and Style. */
+.ms-panel-header{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+ min-height:48px;
+ padding:6px 10px 6px 15px;
+ border-bottom:1px solid #e0e9f1;
+ background:#fff;
+ flex:none;
+}
+.ms-panel-heading{font-size:13px;line-height:1.3;color:#25435e;font-weight:760}
+.ms-panel-close{
+ width:36px;
+ height:36px;
+ min-width:36px;
+ display:grid;
+ place-items:center;
+ border:1px solid #d5e1eb;
+ border-radius:8px;
+ background:#f5f8fb;
+ color:#42627e;
+ font-size:26px;
+ font-weight:450;
+ line-height:1;
+ cursor:pointer;
+ touch-action:manipulation;
+}
+.ms-panel-close:hover,.ms-panel-close:active{
+ background:#e5f1fc;
+ border-color:#a8c7e1;
+ color:#18558a;
+}
+.ms-sidebar:focus-within{scroll-margin-top:10px}
+
+/* Fit stays handy; less-used selection tools are in a single accessible menu. */
+.ms-floating-tools{
+ z-index:450;
+ gap:6px;
+ flex-wrap:nowrap;
+ align-items:flex-start;
+ max-width:calc(100% - 84px);
+}
+.ms-map-tools{position:relative;min-width:0}
+.ms-map-tools>summary{
+ display:block;
+ list-style:none;
+ cursor:pointer;
+ user-select:none;
+ border:1px solid #ced9e2;
+ border-radius:7px;
+ background:rgba(255,255,255,.98);
+ box-shadow:0 2px 9px #163b511d;
+ color:#2b5679;
+ min-height:33px;
+ padding:7px 11px;
+ font-size:11px;
+ line-height:17px;
+ font-weight:680;
+ white-space:nowrap;
+}
+.ms-map-tools>summary::-webkit-details-marker{display:none}
+.ms-map-tools>summary:after{content:" ▾";font-size:10px;color:#708ba2}
+.ms-map-tools[open]>summary{border-color:#89b4d8;background:#eaf5ff}
+.ms-map-tools-menu{
+ position:absolute;
+ top:calc(100% + 6px);
+ right:0;
+ z-index:900;
+ width:195px;
+ display:flex;
+ flex-direction:column;
+ gap:3px;
+ padding:7px;
+ border:1px solid #d0dfec;
+ border-radius:9px;
+ background:#fff;
+ box-shadow:0 10px 29px rgba(17,49,78,.2);
+}
+.ms-tool-option{
+ min-height:39px;
+ padding:9px 10px;
+ border:0;
+ border-radius:6px;
+ background:transparent;
+ color:#294963;
+ font-size:12px;
+ text-align:left;
+ cursor:pointer;
+ white-space:normal;
+}
+.ms-tool-option:hover,.ms-tool-option:focus-visible{
+ background:#edf5fc;
+ color:#195a91;
+}
+.ms-map-tool{border-radius:7px;min-height:33px}
+
+@media(max-width:700px){
+ .ms-shell .ms-sidebar{
+  left:9px;
+  right:9px;
+  height:min(59dvh,445px);
+  box-shadow:0 16px 42px rgba(18,40,63,.26);
+ }
+ .ms-panel-header{
+  min-height:50px;
+  padding-left:14px;
+  padding-right:9px;
+  background:#fff;
+ }
+ .ms-panel-close{width:44px;height:44px;min-width:44px}
+ .ms-floating-tools{right:8px;top:9px;gap:5px;max-width:calc(100% - 83px)}
+ .ms-map-tools>summary{min-height:34px;padding:7px 10px;font-size:11px}
+ .ms-map-tools-menu{width:min(220px,calc(100vw - 95px))}
+ .ms-more-menu{min-width:min(210px,calc(100vw - 30px))}
+ #tabs .gx-more-tabs .gx-more-menu{max-height:min(48dvh,320px)}
+}
