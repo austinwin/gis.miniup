@@ -17,6 +17,11 @@ function isLayer(){return C()?.resourceType(layerUrl())==='layer' && Array.isArr
 function nameOfField(field){return field?.alias || field?.name || ''}
 function fieldType(field){return String(field?.type||'')}
 function oidField(){var d=metadata();return d.objectIdField||d.objectIdFieldName||(d.fields||[]).find(f=>f.type==='esriFieldTypeOID')?.name||'OBJECTID'}
+// Keep the ArcGIS object ID for selection and queries, but do not display it as a table column.
+function tableFields(){
+ var id=oidField().toLowerCase();
+ return (metadata().fields||[]).filter(f=>f.name&&f.name.toLowerCase()!==id&&f.type!=='esriFieldTypeOID');
+}
 function getModel(){
  var url=layerUrl();if(!models.has(url))models.set(url,{url,filters:[],quickFilters:[],quickOpen:false,advancedMode:false,join:'AND',where:'1=1',advanced:'',page:0,pageSize:window.innerWidth<=700?25:100,sort:'',descending:false,records:[],selected:new Set(),hiddenFields:new Set(),columnsOpen:false,count:null,busy:false,error:'',warning:'',requestId:0,counting:false,lastQuery:'',spatial:null,ids:null,hasLoaded:false,detailId:null,stats:null});
  return models.get(url);
@@ -196,14 +201,14 @@ async function loadDistinctValues(m,f,reset){
  finally{if(f.uniqueRequest===rid){f.uniqueLoading=false;repaint()}}
 }
 function renderColumnPicker(m){
- var fields=metadata().fields||[],visible=fields.filter(f=>!m.hiddenFields.has(f.name));
+ var fields=tableFields(),visible=fields.filter(f=>!m.hiddenFields.has(f.name));
  var d=E('details','ge-column-config');d.open=m.columnsOpen;
  d.addEventListener('toggle',()=>{m.columnsOpen=d.open});
  d.appendChild(E('summary','','Columns ('+visible.length+'/'+fields.length+')'));
  var panel=E('div','ge-column-panel'),buttons=E('div','ge-flex');
  buttons.appendChild(B('All columns','ge-secondary',()=>{m.hiddenFields.clear();m.columnsOpen=true;renderData(document.getElementById('content'))}));
  buttons.appendChild(B('Key columns','ge-secondary',()=>{
-   var keep=new Set([oidField(),metadata().displayField,...fields.slice(0,6).map(f=>f.name)]);
+   var keep=new Set([metadata().displayField,...fields.slice(0,6).map(f=>f.name)]);
    m.hiddenFields=new Set(fields.filter(f=>!keep.has(f.name)).map(f=>f.name));
    m.columnsOpen=true;renderData(document.getElementById('content'));
  }));
@@ -272,7 +277,7 @@ function renderData(host){
  var settings=E('details','ge-table-settings');
  settings.open=Boolean(m.settingsOpen);
  settings.addEventListener('toggle',()=>{m.settingsOpen=settings.open});
- settings.appendChild(E('summary','','Table settings · '+m.pageSize+' rows · '+(metadata().fields||[]).length+' columns'));
+ settings.appendChild(E('summary','','Table settings · '+m.pageSize+' rows · '+tableFields().length+' columns'));
  var config=E('div','ge-flex ge-controls');
  var sizes=E('select','ge-select ge-small');[25,50,100,200,500].forEach(n=>{var o=E('option','',n+' rows / page');o.value=n;sizes.appendChild(o)});
  sizes.value=m.pageSize;
@@ -283,7 +288,7 @@ function renderData(host){
  add(config,sizes,E('span','ge-inline','Sort by'),sorting,order,renderColumnPicker(m),
   B('Dates: '+window.GISFields.getZone(),'ge-secondary',()=>{window.GISFields.setZone(window.GISFields.getZone()==='UTC'?'local':'UTC');renderData(host)}));
  settings.appendChild(config);results.appendChild(settings);
- var visibleCount=(metadata().fields||[]).filter(f=>!m.hiddenFields.has(f.name)).length;
+ var visibleCount=tableFields().filter(f=>!m.hiddenFields.has(f.name)).length;
  results.appendChild(E('p','ge-table-meta',
    visibleCount+' columns · Swipe horizontally to see fields; scroll vertically for rows. Tap a column heading to sort. Dates: '+window.GISFields.getZone()+'.'));
  var body=E('div','ge-table-scroll');body.id='geTable';
@@ -346,7 +351,7 @@ function renderData(host){
  if(window.GISWorkspace)window.GISWorkspace.decorate(host,m);
 }
 function renderRows(root,m){
- var fields=(metadata().fields||[]).filter(f=>!m.hiddenFields.has(f.name));
+ var fields=tableFields().filter(f=>!m.hiddenFields.has(f.name));
  var table=E('table','ge-data-table'),thead=E('thead'),head=E('tr');
  var selectHeader=E('th','','✓');selectHeader.scope='col';selectHeader.title='Select records';selectHeader.setAttribute('aria-label','Select records');head.appendChild(selectHeader);
  fields.forEach(f=>{
@@ -913,5 +918,5 @@ if(window.matchMedia){
  });
 }
 window.GISEnhancements={renderData,renderIntro,renderOverviewAddon,onMap,refreshVectorOverlay,renderCompare,renderConnections,beforeNavigate,afterNavigate,
- getModel,currentWhere,spatialParams,buildWhere,loadRows,loadCount,oidField,setupExtras,resetSensitive};
+ getModel,currentWhere,spatialParams,buildWhere,loadRows,loadCount,oidField,tableFields,setupExtras,resetSensitive};
 })();

@@ -85,3 +85,22 @@ test('count failure does not hide successfully retrieved table records',async()=
  assert.equal(model.error,'');
  assert.equal(model.records.length,1);
 });
+
+test('attribute table hides ArcGIS object ID while keeping identifier in metadata',()=>{
+ const {api,state,model}=harness();
+ const columns=api.tableFields().map(f=>f.name);
+ assert.equal(columns.includes('OBJECTID'),false);
+ assert.deepEqual(Array.from(columns),['STATUS','NAME','DIAMETER','MATERIAL']);
+ assert.equal(api.oidField(),'OBJECTID');
+ assert.equal(state.data.fields.find(f=>f.name==='OBJECTID').type,'esriFieldTypeOID');
+ assert.equal(model.hiddenFields.has('OBJECTID'),false);
+});
+
+test('object ID field detection uses ArcGIS type and configured identifier',()=>{
+ const {api,state}=harness();
+ state.data.objectIdField='ASSET_PK';
+ state.data.fields=[{name:'ASSET_PK',type:'esriFieldTypeInteger'}, {name:'OBJECTID',type:'esriFieldTypeString'}, {name:'NAME',type:'esriFieldTypeString'}];
+ assert.deepEqual(Array.from(api.tableFields().map(f=>f.name)),['OBJECTID','NAME']);
+ state.data.fields[1].type='esriFieldTypeOID';
+ assert.deepEqual(Array.from(api.tableFields().map(f=>f.name)),['NAME']);
+});
