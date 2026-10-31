@@ -330,10 +330,7 @@ function renderRows(root,m){
    var rank=f=>f.name===metadata().displayField?0:f.name===oidField()?1:2;
    return rank(a)-rank(b);
  }).slice(0,4);
- function openRecord(oid){
-   m.detailId=oid;renderRecordDetail(m);
-   if(window.innerWidth<=700)document.getElementById('geRecordDetails')?.scrollIntoView({behavior:'smooth',block:'start'});
- }
+ function openRecord(oid){m.detailId=oid;renderRecordDetail(m)}
  m.records.forEach(feature=>{
    var attrs=feature.attributes||{},oid=val(oidField(),attrs),key=String(oid);
    var tr=E('tr',m.selected.has(key)?'ge-row-selected':'');
@@ -359,10 +356,20 @@ function renderRows(root,m){
      check.checked=pick.checked;tr.classList.toggle('ge-row-selected',pick.checked);
    });
    add(label,pick,E('span','','Record '+textSafe(oid)));
-   add(top,label,B('Details','ge-secondary',()=>openRecord(oid)));card.appendChild(top);
+   var isExpanded=m.detailId!==null && String(m.detailId)===key;
+   add(top,label,B(isExpanded?'Close':'Details','ge-secondary',()=>{
+     m.detailId=isExpanded?null:oid;
+     renderData(document.getElementById('content'));
+     if(m.detailId!==null)document.getElementById('geMobileDetail')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+   }));card.appendChild(top);
    var dl=E('dl','ge-record-preview');
    preview.forEach(f=>add(dl,E('dt','',nameOfField(f)),E('dd','',displayField(f,val(f.name,attrs)))));
-   card.appendChild(dl);cards.appendChild(card);
+   card.appendChild(dl);
+   if(isExpanded){
+     var inline=E('div','ge-inline-detail');inline.id='geMobileDetail';
+     card.appendChild(inline);renderRecordDetail(m,inline);
+   }
+   cards.appendChild(card);
  });
  table.appendChild(tbody);root.appendChild(table);root.appendChild(cards);
 }
@@ -463,8 +470,8 @@ function downloadResource(url,fileName){
      document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),30000);
    });
 }
-async function renderRecordDetail(m){
- var host=document.getElementById('geRecordDetails');
+async function renderRecordDetail(m,override){
+ var host=override||document.getElementById('geRecordDetails');
  if(!host||m.detailId===null)return;
  var oid=m.detailId,row=m.records.find(x=>String(val(oidField(),x.attributes||{}))===String(oid));
  if(!row)return;
