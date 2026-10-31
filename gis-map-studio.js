@@ -2,7 +2,7 @@
    Stores only opt-in configuration; never persists tokens or feature payloads. */
 (function(){
 'use strict';
-var workspaces=new Map(),session=null,SEQ=0,STORAGE='gis-map-studio-v1',MAX_LAYERS=16,MAX_FEATURES=500;
+var workspaces=new Map(),workspaceNotes=new Map(),session=null,SEQ=0,STORAGE='gis-map-studio-v1',MAX_LAYERS=16,MAX_FEATURES=500;
 var glPromise=null;
 function ensureMapLibre(){
  if(typeof L()?.maplibreGL==='function')return Promise.resolve();
@@ -58,13 +58,13 @@ function makeLayer(url,meta,previous){
  return {id:++SEQ,url,name:meta.name||('Layer '+meta.id),geom:meta.geometryType||'',fields:meta.fields||[],
   extent:meta.extent||meta.fullExtent||null,where:String(previous?.where||'1=1').slice(0,500),visible:previous?.visible!==false,
   style:validStyle(previous?.style),pointMode:['points','clusters','heat'].includes(previous?.pointMode)?previous.pointMode:'points',
-  labelField:previous?.labelField||'',labelVisible:!!previous?.labelVisible,
+  labelField:previous?.labelField||'',labelVisible:!!previous?.labelVisible,theme:previous?.theme||{mode:'single',field:''},
   count:0,partial:false,error:'',loaded:false,sequence:0,render:null,features:null,drawMode:'vector',
   imageUrl:null,opacity:previous?.opacity===undefined?1:Math.max(.1,Math.min(1,Number(previous.opacity)||1))};
 }
 function persistConfig(s){
  return {basemap:s.basemap,layers:s.layers.map(x=>({url:x.url,visible:x.visible,style:x.style,pointMode:x.pointMode,
- labelField:x.labelField,labelVisible:x.labelVisible,where:x.where,opacity:x.opacity})),zoom:s.map?.getZoom(),center:s.map?.getCenter()};
+ labelField:x.labelField,labelVisible:x.labelVisible,theme:x.theme,where:x.where,opacity:x.opacity})),annotations:(s.annotations||[]).slice(0,300),zoom:s.map?.getZoom(),center:s.map?.getCenter()};
 }
 function readSaved(key){try{
  var obj=JSON.parse(localStorage.getItem(STORAGE)||'{}');return obj[key]||null;
@@ -243,6 +243,7 @@ function selectedProps(s,layer,feature){
  panel.appendChild(dl);
  add(panel,btn('Open attribute table','ms-primary',()=>C().navigate(layer.url)));
  panel.hidden=false;s.mapwrap.classList.add('ms-inspecting');
+ if(window.GISPowerTools)window.GISPowerTools.onPick(s,layer,feature);
 }
 function featureTooltip(layer,feature,target){
  if(!layer.labelVisible||!layer.labelField)return;
@@ -251,9 +252,9 @@ function featureTooltip(layer,feature,target){
  var span=el('span','',htmlValue(value).slice(0,120));
  target.bindTooltip(span,{permanent:true,direction:'center',className:'ms-feature-label',opacity:.9});
 }
-function vectorOpts(layer){
- var st=layer.style;
- return {pane:paneName(layer),color:st.color,fillColor:st.fill,weight:st.weight,
+function vectorOpts(layer,feature){
+ var st=layer.style,thematic=window.GISPowerTools?.themedColor(layer,feature);
+ return {pane:paneName(layer),color:thematic||st.color,fillColor:thematic||st.fill,weight:st.weight,
   opacity:st.opacity*layer.opacity,fillOpacity:st.fillOpacity*layer.opacity,
   dashArray:st.dash==='dash'?'8 5':st.dash==='dot'?'2 5':null};
 }
@@ -280,8 +281,8 @@ function renderFeatures(s,layer){
   layer.render=group.addTo(s.map);
  }else{
   layer.render=L().geoJSON({type:'FeatureCollection',features:features},{
-   pane:paneName(layer),style:()=>vectorOpts(layer),
-   pointToLayer:(f,latlng)=>L().circleMarker(latlng,Object.assign({},opts,{radius:layer.style.radius})),
+   pane:paneName(layer),style:f=>vectorOpts(layer,f),
+   pointToLayer:(f,latlng)=>L().circleMarker(latlng,Object.assign({},vectorOpts(layer,f),{radius:layer.style.radius})),
    onEachFeature:(f,shape)=>{
     shape.on('click',ev=>{if(ev.originalEvent)L().DomEvent.stopPropagation(ev);selectedProps(s,layer,f);});
     featureTooltip(layer,f,shape);
@@ -421,10 +422,12 @@ function renderPanel(s){
  if(!isCurrent(s))return;
  s.panelContent.replaceChildren();
  s.tabButtons.forEach(b=>{var on=b.dataset.panel===s.panel;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});
- if(s.panelHeading)s.panelHeading.textContent=({layers:'Layers',add:'Add layers',style:'Style layer'})[s.panel]||'Layers';
+ if(s.panelHeading)s.panelHeading.textContent=({layers:'Layers',add:'Add layers',style:'Style layer',analyze:'Spatial analysis',draw:'Annotations'})[s.panel]||'Layers';
  if(s.panel==='layers')showLayers(s);
  else if(s.panel==='add')showAdd(s);
  else if(s.panel==='style')showStyle(s);
+ else if(s.panel==='analyze'&&window.GISPowerTools)window.GISPowerTools.analysis(s,s.panelContent);
+ else if(s.panel==='draw'&&window.GISPowerTools)window.GISPowerTools.annotate(s,s.panelContent);
 }
 function showLayers(s){
  var p=s.panelContent;
@@ -548,11 +551,17 @@ function showStyle(s){
  var applyButton=btn('Apply','ms-primary');applyButton.type='submit';
  add(form,input,applyButton);add(query,summary,form);p.appendChild(query);
  p.appendChild(el('p','ms-hint','Filters run on the server. SQL syntax and supported fields vary by service.'));
+ if(window.GISPowerTools)window.GISPowerTools.thematic(s,p,layer);
  if(layer.drawMode==='image')p.appendChild(el('p','ms-layer-warning','Image-only layer: visual styling and labels require the feature query endpoint. Opacity and order still work.'));
  if(layer.partial)p.appendChild(el('p','ms-layer-warning','Styles and density use only the currently loaded preview features. Zoom in for greater detail.'));
 }
 function showAdd(s){
  var p=s.panelContent;
+ if(window.GISPowerTools){
+  var discover=el('details','gp-catalog'),summary=el('summary','','Search public GIS catalog');
+  var body=el('div','gp-catalog-body');discover.appendChild(summary);discover.appendChild(body);
+  p.appendChild(discover);window.GISPowerTools.discovery(s,body);
+ }
  p.appendChild(el('p','ms-hint','Browse this server or paste an HTTPS ArcGIS layer URL.'));
  var form=el('form','ms-add-form'),input=el('input','ms-input');input.type='url';
  input.required=true;input.placeholder='https://.../FeatureServer/0';input.setAttribute('aria-label','ArcGIS layer URL');
@@ -645,8 +654,9 @@ function cleanUp(){
  if(s.focusLayer){try{s.map.removeLayer(s.focusLayer);}catch(e){}}
  if(s.baseLayer&&s.map){try{s.map.removeLayer(s.baseLayer);}catch(e){}}
  if(s.rootKey)C().state.mapBasemap=s.basemap;
+ if(s.rootKey)workspaceNotes.set(s.rootKey,(s.annotations||[]).slice(0,300));
  if(s.rootKey)workspaces.set(s.rootKey,s.layers.map(l=>({url:l.url,visible:l.visible,style:l.style,
- pointMode:l.pointMode,labelField:l.labelField,labelVisible:l.labelVisible,where:l.where,opacity:l.opacity})));
+ pointMode:l.pointMode,labelField:l.labelField,labelVisible:l.labelVisible,theme:l.theme,where:l.where,opacity:l.opacity})));
  if(s.map){s.map.off();s.map.remove();}
  if(C().state.map===s.map){C().state.map=null;C().state.overlay=null;}
  session=null;
@@ -687,7 +697,44 @@ function mount(host){
   btn('Clear saved layout','ms-small ms-danger',()=>{
    if(clearSaved(s.rootKey))notice(s,'Saved layout removed from this browser.');
    more.open=false;
-  }));
+  }),
+  btn('Export project JSON','ms-small',()=>{
+   more.open=false;
+   var file={format:'gis.miniup-project',version:1,...persistConfig(s)};
+   var blob=new Blob([JSON.stringify(file,null,2)],{type:'application/json'});
+   var url=URL.createObjectURL(blob),link=document.createElement('a');
+   link.href=url;link.download='gis-map-project.json';link.click();
+   setTimeout(()=>URL.revokeObjectURL(url),1200);
+  }),
+  btn('Import project JSON','ms-small',()=>{
+   more.open=false;
+   var input=document.createElement('input');input.type='file';input.accept='.json,application/json';
+   input.addEventListener('change',async()=>{
+    try{
+     var file=input.files?.[0];if(!file)return;
+     if(file.size>524288)throw Error('Project file exceeds 512 KB.');
+     var data=JSON.parse(await file.text());
+     if(data.format!=='gis.miniup-project'||data.version!==1||!Array.isArray(data.layers)||data.layers.length>MAX_LAYERS)
+       throw Error('Not a compatible GIS project file.');
+     if(!data.layers.every(x=>{var source=baseService(x.url);return !!source&&source.layerId!==null;}))
+       throw Error('Project contains an invalid or unsupported layer URL.');
+     if(data.annotations!==undefined&&(!Array.isArray(data.annotations)||data.annotations.length>300))
+       throw Error('Project has too many annotations.');
+     s.layers.slice().forEach(l=>removeLayer(s,l));
+     if(BASEMAPS[data.basemap])setBasemap(s,data.basemap);
+     for(var i=data.layers.length-1;i>=0;i--)await addLayer(s,data.layers[i].url,data.layers[i]);
+     if(Array.isArray(data.annotations)&&window.GISPowerTools){
+      s.annotations=data.annotations.filter(f=>f?.type==='Feature'&&f.geometry?.type).slice(0,300);
+      window.GISPowerTools.drawLayer(s);
+     }
+     if(data.center&&Number.isFinite(Number(data.center.lat))&&Number.isFinite(Number(data.center.lng))&&Number.isFinite(Number(data.zoom)))
+      s.map.setView([Number(data.center.lat),Number(data.center.lng)],Math.min(19,Math.max(1,Number(data.zoom))));
+     notice(s,'Project loaded. Layers still depend on the original GIS services.');
+    }catch(e){notice(s,'Project import failed: '+hostError(e),true);}
+   });
+   input.click();
+  }),
+  btn('Print map / PDF','ms-small',()=>{more.open=false;window.print();}));
  add(more,summary,menu);controls.appendChild(more);
  bar.appendChild(controls);shell.appendChild(bar);
  var body=el('div','ms-body'),side=el('aside','ms-sidebar');
@@ -724,6 +771,10 @@ function mount(host){
  mapMenu.appendChild(btn('Clear map selection','ms-tool-option',()=>{
   mapTools.open=false;setDrawing(s,false);clearArea(s);
  }));
+ if(window.GISPowerTools){
+  mapMenu.appendChild(btn('Spatial analysis','ms-tool-option',()=>{mapTools.open=false;actionPane(s,'analyze');}));
+  mapMenu.appendChild(btn('Draw & measure','ms-tool-option',()=>{mapTools.open=false;actionPane(s,'draw');}));
+ }
  add(mapTools,mapSummary,mapMenu);floating.appendChild(mapTools);s.mapTools=mapTools;
  var bottom=el('div','ms-map-footer');s.layerCount=el('span','','0 layers');
  var coord=el('span','','Pan to explore · zoom to load more detail');
@@ -741,6 +792,7 @@ function mount(host){
   clearTimeout(s.timer);s.timer=setTimeout(()=>refresh(s),350);
  });
  s.map.on('click',event=>{
+  if(window.GISPowerTools?.annotateClick(s,event))return;
   if(!s.drawing)return;
   if(!s.drawFirst){s.drawFirst=event.latlng;return;}
   var a=s.drawFirst,b=event.latlng;
@@ -756,6 +808,7 @@ function mount(host){
  });
  var desktop=window.innerWidth>700;
  s.sidebar.hidden=!desktop;s.shell.classList.toggle('ms-panel-visible',desktop);
+ if(window.GISPowerTools){window.GISPowerTools.attach(s);s.annotations=(workspaceNotes.get(key)||[]).slice();window.GISPowerTools.drawLayer(s);}
  s.layersButton.setAttribute('aria-expanded',String(desktop));
  s.addButton.setAttribute('aria-expanded',String(desktop));
  s.escapeHandler=event=>{
@@ -807,8 +860,9 @@ async function restoreSaved(s){
  }
  if(isCurrent(s)&&conf.center&&Number.isFinite(Number(conf.center.lat))&&Number.isFinite(Number(conf.center.lng))&&Number.isFinite(Number(conf.zoom)))
   s.map.setView([conf.center.lat,conf.center.lng],Math.min(19,Math.max(1,conf.zoom)));
+ if(window.GISPowerTools){s.annotations=Array.isArray(conf.annotations)?conf.annotations.slice(0,300):[];window.GISPowerTools.drawLayer(s);}
  renderPanel(s);
 }
-window.GISMapStudio={mount,cleanup:cleanUp,refresh:()=>{if(session)refresh(session);},
+window.GISMapStudio={mount,cleanup:cleanUp,api:{renderFeatures,renderPanel,queryServer,layerWhere,addLayer,browse,actionPane},refresh:()=>{if(session)refresh(session);},
  utils:{baseService,validStyle,makeLayer,BASEMAPS},getState:()=>session};
 })();
