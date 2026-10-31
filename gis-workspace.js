@@ -25,10 +25,11 @@ function viewsPopup(host,m){
   var row=el('div','gx-saved-row');
   row.appendChild(button(x.name,'gx-quiet',()=>{
    m.filters=(x.filters||[]).map(f=>({field:f.field,op:f.op,value:f.value}));
+   m.quickFilters=(x.quickFilters||[]).map(f=>({field:f.field,op:f.op,value:f.value}));
    m.join=x.join==='OR'?'OR':'AND';m.search=x.search||'';m.searchField=x.searchField||'';
    m.advanced=x.advanced||'';m.sort=x.sort||'';m.descending=!!x.descending;
    m.hiddenFields=new Set(x.hiddenFields||[]);m.pageSize=x.pageSize||50;
-   m.spatial=x.spatial||null;m.filtersOpen=false;m.selected.clear();
+   m.spatial=x.spatial||null;m.quickOpen=false;m.advancedMode=false;m.searchDraft=m.search;m.selected.clear();m.facetCache=new Map();
    try{m.where=G().buildWhere(m);}catch(error){C().showAlert('Saved view unavailable',error.message,true);return;}
    box.open=false;rerender();apply(m);
   }));
@@ -40,6 +41,7 @@ function viewsPopup(host,m){
   var name=window.prompt('Name this view (saved in this browser):','My view');
   if(!name||!name.trim())return;
   var entry={url:m.url,name:name.trim().slice(0,60),filters:m.filters.map(f=>({field:f.field,op:f.op,value:f.value})),
+   quickFilters:(m.quickFilters||[]).map(f=>({field:f.field,op:f.op,value:f.value})),
    join:m.join,advanced:m.advanced,search:m.search,searchField:m.searchField,sort:m.sort,
    descending:m.descending,hiddenFields:Array.from(m.hiddenFields),pageSize:m.pageSize,spatial:m.spatial};
   if(!store([entry,...stored().filter(x=>!(x.url===entry.url&&x.name===entry.name))]))
@@ -48,6 +50,140 @@ function viewsPopup(host,m){
  }));
  box.appendChild(contents);host.appendChild(box);
 }
+
+function removeQuick(m,field){
+ m.quickFilters=(m.quickFilters||[]).filter(f=>f.field!==field);
+}
+function fieldValueLabel(f,value){
+ if(value===null||value===undefined)return '(Empty / null)';
+ var found=f.domain?.codedValues?.find(x=>String(x.code)===String(value));
+ return String(found?.name??(window.GISFields?.format?window.GISFields.format(f,value):value));
+}
+function quickFacetPane(m){
+ var pane=el('section','gx-quick-filters');
+ var head=el('div','gx-quick-head');
+ add(head,el('div','', ''),button('Close ×','gx-quiet',()=>{m.quickOpen=false;rerender();}));
+ head.firstChild.appendChild(el('h3','','Filter by a value'));
+ head.firstChild.appendChild(el('p','gx-muted','Pick a field, then a value. Counts come from the ArcGIS server when supported.'));
+ pane.appendChild(head);
+ var candidates=fields().filter(f=>/esriFieldType(?:String|GUID|GlobalID|SmallInteger|Integer|BigInteger)/i.test(f.type||'')||f.domain?.codedValues?.length);
+ var selection=m.quickField;
+ if(!candidates.some(f=>f.name===selection)){
+  selection=(candidates.find(f=>/status|material|condition|type|category|district|area|owner/i.test(f.name+' '+fieldLabel(f)))||
+    candidates.find(f=>f.domain?.codedValues?.length)||candidates[0])?.name||'';
+  m.quickField=selection;
+ }
+ var row=el('div','gx-quick-controls');
+ var label=el('label','gx-quick-select-label','Field');
+ var select=el('select','gx-select');
+ candidates.forEach(f=>{var op=el('option','',fieldLabel(f));op.value=f.name;select.appendChild(op);});
+ select.value=selection;
+ select.addEventListener('change',()=>{m.quickField=select.value;m.facetSearch='';rerender();});
+ label.appendChild(select);row.appendChild(label);
+ if(selection&&(m.quickFilters||[]).some(f=>f.field===selection)){
+  row.appendChild(button('Remove this filter','gx-tool-button',()=>{removeQuick(m,selection);rerender();apply(m);}));
+ }
+ pane.appendChild(row);
+ var output=el('div','gx-facet-list');
+ pane.appendChild(output);
+ if(!selection){
+  output.appendChild(el('p','gx-muted','No categorical fields are available. Use Advanced filters for other field types.'));
+  return pane;
+ }
+ var f=candidates.find(x=>x.name===selection);
+ var filtered=Object.assign({},m,{quickFilters:(m.quickFilters||[]).filter(x=>x.field!==selection)});
+ var where;
+ try{where=G().buildWhere(filtered);}catch(error){output.textContent=error.message;return pane;}
+ var key=JSON.stringify([selection,where,m.spatial||null]);
+ m.facetCache=m.facetCache||new Map();
+ var cached=m.facetCache.get(key);
+ m.facetVersion=(m.facetVersion||0)+1;
+ var version=m.facetVersion;
+ function draw(data){
+  if(!output.isConnected||!m.quickOpen||m.quickField!==selection)return;
+  output.replaceChildren();
+  if(!data.rows.length){output.appendChild(el('p','gx-muted','No values found. Try a different field or clear other filters.'));return;}
+  var items=el('div','gx-facet-items');
+  if(data.rows.length>12){
+   var search=el('input','gx-facet-search');
+   search.type='search';search.placeholder='Find among these loaded values…';
+   search.setAttribute('aria-label','Find within loaded filter values');
+   search.value=m.facetSearch||'';
+   search.addEventListener('input',()=>{
+    m.facetSearch=search.value;
+    var q=search.value.toLowerCase().trim();
+    items.querySelectorAll('button').forEach(b=>{b.hidden=!!q&&!b.textContent.toLowerCase().includes(q);});
+   });
+   output.appendChild(search);
+  }
+  data.rows.forEach(v=>{
+   var current=(m.quickFilters||[]).some(q=>q.field===f.name&&String(q.value)===String(v.value)&&
+    (v.value===null?q.op==='IS NULL':q.op==='='));
+   var opt=button('','gx-facet-option'+(current?' is-active':''),()=>{
+    var previous=(m.quickFilters||[]).slice();
+    removeQuick(m,f.name);
+    if(!current)m.quickFilters.push({field:f.name,op:v.value===null?'IS NULL':'=',value:v.value===null?'':v.value});
+    try{m.where=G().buildWhere(m);}
+    catch(error){m.quickFilters=previous;C().showAlert('Cannot apply filter',error.message,true);return;}
+    m.quickOpen=false;rerender();apply(m);
+   });
+   opt.setAttribute('aria-pressed',String(current));
+   add(opt,el('span','',fieldValueLabel(f,v.value)),
+     el('span','gx-facet-number',v.count===null?(current?'✓':''):v.count.toLocaleString()));
+   items.appendChild(opt);
+  });
+  output.appendChild(items);
+  if(m.facetSearch){
+   var q=m.facetSearch.toLowerCase().trim();
+   items.querySelectorAll('button').forEach(b=>{b.hidden=!!q&&!b.textContent.toLowerCase().includes(q);});
+  }
+  output.appendChild(el('p','gx-muted',data.limited?
+   'Showing a limited set of values, not every category. Use Advanced filters to enter a value not shown.':
+   data.counts?'Counts are calculated across matching server records.':'Available distinct values; counts are not provided by this service.'));
+ }
+ if(cached){draw(cached);return pane;}
+ output.appendChild(el('p','gx-muted','Loading values from the server…'));
+ (async()=>{
+  var limit=Math.min(100,Math.max(20,Number(C().state.data.maxRecordCount)||100));
+  var base=Object.assign({where,returnGeometry:'false'},G().spatialParams(m));
+  var data,result;
+  try{
+   if(C().state.data.advancedQueryCapabilities?.supportsStatistics===false||C().state.data.supportsStatistics===false)
+    throw Error('Statistics unavailable');
+   data=await C().post(m.url+'/query',Object.assign({},base,{outFields:f.name,
+     groupByFieldsForStatistics:f.name,
+     outStatistics:JSON.stringify([{statisticType:'count',onStatisticField:G().oidField(),outStatisticFieldName:'GX_QUICK_COUNT'}]),
+     resultRecordCount:limit}));
+   var features=data.features||[];
+   result={rows:features.map(q=>({value:q.attributes?.[f.name]??null,count:Number(q.attributes?.GX_QUICK_COUNT)||0}))
+     .sort((x,y)=>y.count-x.count),limited:!!data.exceededTransferLimit||features.length>=limit,counts:true};
+  }catch(error){
+   try{
+    data=await C().post(m.url+'/query',Object.assign({},base,{outFields:f.name,returnDistinctValues:'true',
+     resultRecordCount:limit,orderByFields:f.name+' ASC'}));
+    var features=data.features||[];
+    result={rows:features.map(q=>({value:q.attributes?.[f.name]??null,count:null})),
+      limited:!!data.exceededTransferLimit||features.length>=limit,counts:false};
+   }catch(fallback){
+    if(f.domain?.codedValues?.length){
+     result={rows:f.domain.codedValues.slice(0,limit).map(v=>({value:v.code,count:null})),
+       limited:f.domain.codedValues.length>limit,counts:false};
+    }else{
+     if(output.isConnected&&m.quickField===selection)output.replaceChildren(el('p','gx-error',
+       'This server cannot list values for this field. Use Advanced filters to enter a condition.'));
+     return;
+    }
+   }
+  }
+  if(!output.isConnected||!m.quickOpen||m.quickField!==selection)return;
+  if(version!==m.facetVersion)return;
+  // Bounded cache only; no persistence of records or tokens.
+  m.facetCache.set(key,result);
+  if(m.facetCache.size>12)m.facetCache.delete(m.facetCache.keys().next().value);
+  draw(result);
+ })();
+ return pane;
+}
 function decorate(host,m){
  var outer=host.querySelector('#geData');if(!outer)return;
  outer.classList.add('gx-workspace');
@@ -55,66 +191,136 @@ function decorate(host,m){
  var filters=cards[0],results=cards[1],inspector=document.getElementById('geRecordDetails'),summary=cards.find(x=>x!==filters&&x!==results&&x!==inspector);
  if(!filters||!results)return;
  var bar=el('div','gx-explore-header');
- var title=el('div','gx-heading');add(title,el('h2','','Explore records'),el('span','gx-sub','Read-only · server queries'));bar.appendChild(title);
- var tools=el('div','gx-toolbar');
+ var top=el('div','gx-topline');
+ var heading=el('div','gx-heading');
+ add(heading,el('h2','','Records'),el('span','gx-sub','Search, filter, and select records. Read-only.'));
+ top.appendChild(heading);
+ var description=el('div','gx-record-summary');
+ description.appendChild(el('span','gx-record-pill',m.count===null?(m.countError?'Count unavailable':'Counting…'):m.count.toLocaleString()+' matching'));
+ description.appendChild(el('span','gx-sub',fields().length+' fields'));
+ top.appendChild(description);bar.appendChild(top);
+ var toolbar=el('div','gx-toolbar');
  var fieldList=fields().filter(f=>/^esriFieldType(?:String|GUID|GlobalID|SmallInteger|Integer|BigInteger|Double|Single)$/i.test(f.type||''));
- var field=el('select','gx-search-field');
- field.setAttribute('aria-label','Search field');
- fieldList.forEach(f=>{var op=el('option','',fieldLabel(f));op.value=f.name;field.appendChild(op);});
  if(!m.searchField||!fieldList.some(f=>f.name===m.searchField)){
-  var preferred=fieldList.find(f=>f.name===C().state.data.displayField)||fieldList.find(f=>/name|asset|ufid|id/i.test(f.name))||fieldList[0];
+  var preferred=fieldList.find(f=>f.name===C().state.data.displayField)||
+   fieldList.find(f=>/name|asset|ufid|id/i.test(f.name))||fieldList[0];
   m.searchField=preferred?.name||'';
  }
+ var searchBox=el('form','gx-search-box');
+ searchBox.setAttribute('role','search');
+ var search=el('input','gx-search-input');
+ search.type='search';search.placeholder='Search records…';
+ search.value=m.searchDraft===undefined?(m.search||''):m.searchDraft;
+ search.setAttribute('aria-label','Search records');
+ search.addEventListener('input',()=>{
+  m.searchDraft=search.value;
+  // Clearing the search control should clear the applied search too.
+  if(!search.value&&m.search){m.search='';apply(m);}
+ });
+ var field=el('select','gx-search-field');field.setAttribute('aria-label','Search in field');
+ fieldList.forEach(f=>{var op=el('option','',fieldLabel(f));op.value=f.name;field.appendChild(op);});
  field.value=m.searchField;
- var search=el('input','gx-search-input');search.type='search';search.placeholder='Search this field…';
- search.value=m.search||'';search.setAttribute('aria-label','Search records in selected field');
- var searchBox=el('div','gx-search-box');add(searchBox,field,search);
- if(!fieldList.length)searchBox.hidden=true;
- function executeSearch(){
-   var previous=m.search,previousField=m.searchField;
-   m.search=search.value.trim();m.searchField=field.value;
-   try{m.where=G().buildWhere(m);apply(m);}
-   catch(error){m.search=previous;m.searchField=previousField;C().showAlert('Search unavailable',error.message,true);}
- }
- search.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();executeSearch();}});
  field.addEventListener('change',()=>{m.searchField=field.value;});
- add(searchBox,button('Search','gx-search-run',executeSearch));
- tools.appendChild(searchBox);
- tools.appendChild(button('Filters'+(m.filters.length?' · '+m.filters.length:''),'gx-tool-button',()=>{
-  m.filtersOpen=!m.filtersOpen;rerender();
+ function executeSearch(e){
+  if(e)e.preventDefault();
+  var previous=m.search,previousField=m.searchField;
+  m.search=search.value.trim();m.searchField=field.value;m.searchDraft=search.value;
+  try{m.where=G().buildWhere(m);apply(m);}
+  catch(error){m.search=previous;m.searchField=previousField;C().showAlert('Invalid search',error.message,true);}
+ }
+ searchBox.addEventListener('submit',executeSearch);
+ var run=button('Search','gx-search-run',executeSearch);run.type='submit';
+ add(searchBox,search,field,run);
+ if(!fieldList.length)searchBox.hidden=true;
+ toolbar.appendChild(searchBox);
+ toolbar.appendChild(button('＋ Filter'+((m.quickFilters||[]).length?' · '+m.quickFilters.length:''),'gx-tool-button'+(m.quickOpen?' is-active':''),()=>{
+  m.quickOpen=!m.quickOpen;m.advancedMode=false;rerender();
  }));
- tools.appendChild(button('Analyze','gx-tool-button',()=>C().setTab('analyze')));
- viewsPopup(tools,m);bar.appendChild(tools);outer.insertBefore(bar,filters);
+ var column=results.querySelector('.ge-column-config');
+ if(column){
+  column.remove();column.classList.add('gx-column-direct');
+  column.open=Boolean(m.columnsOpen);
+  toolbar.appendChild(column);
+ }
+ var actions=results.querySelector('.ge-action-menu');
+ if(actions){
+  actions.remove();actions.classList.add('gx-action-direct');
+  actions.querySelector('summary').textContent='Actions';
+  toolbar.appendChild(actions);
+  viewsPopup(actions.querySelector('.ge-actions')||actions,m);
+ }
+ toolbar.appendChild(button('Advanced'+(m.filters.length||m.advanced?' •':''),'gx-tool-button'+(m.advancedMode?' is-active':''),()=>{
+   m.advancedMode=!m.advancedMode;m.quickOpen=false;rerender();
+ }));
+ var help=button('?','gx-tool-button gx-help-button',()=>{
+  m.helpOpen=!m.helpOpen;rerender();
+ });help.setAttribute('aria-label','How to use this table');help.title='How to use';
+ toolbar.appendChild(help);
+ bar.appendChild(toolbar);
+ outer.insertBefore(bar,filters);
+ if(m.helpOpen){
+  var tip=el('p','gx-help-copy','Choose a field to search and press Enter. Use + Filter to pick a value, click column headings to sort, or select a row to inspect details. Advanced opens precise conditions and SQL.');
+  outer.insertBefore(tip,filters);
+ }
  var chips=el('div','gx-active-chips');
- if(m.search)chips.appendChild(button('Search: '+m.search+' ×','gx-chip',()=>{
-   m.search='';m.where=G().buildWhere(m);rerender();apply(m);
+ function chip(label,fn){chips.appendChild(button(label+' ×','gx-chip',fn));}
+ if(m.search)chip('Search: '+m.search,()=>{m.search='';m.searchDraft='';rerender();apply(m);});
+ (m.quickFilters||[]).forEach(f=>chip(fieldLabel(fields().find(x=>x.name===f.field)||{name:f.field})+': '+
+   (f.op==='IS NULL'?'Empty':fieldValueLabel(fields().find(x=>x.name===f.field)||{name:f.field},f.value)),
+   ()=>{removeQuick(m,f.field);rerender();apply(m);}));
+ m.filters.forEach((f,i)=>chip(fieldLabel(fields().find(x=>x.name===f.field)||{name:f.field})+' '+f.op+' '+(f.value||''),()=>{
+  m.filters.splice(i,1);rerender();apply(m);
  }));
- m.filters.forEach((f,i)=>chips.appendChild(button(f.field+' '+f.op+' '+(f.value||'')+' ×','gx-chip',()=>{
-  m.filters.splice(i,1);m.where=G().buildWhere(m);rerender();apply(m);
- })));
- if(m.spatial)chips.appendChild(button('Map area ×','gx-chip',()=>{
-  m.spatial=null;rerender();apply(m);
- }));
- if(chips.childNodes.length)outer.insertBefore(chips,filters);
- filters.classList.add('gx-filter-pane');filters.hidden=!m.filtersOpen;
- results.classList.add('gx-results');
+ if(m.advanced?.trim())chip('SQL active',()=>{m.advanced='';rerender();apply(m);});
+ if(m.spatial)chip('Map area',()=>{m.spatial=null;rerender();apply(m);});
+ if(chips.childNodes.length){
+  chips.appendChild(button('Clear all','gx-clear-all',()=>{
+    m.quickFilters=[];m.filters=[];m.advanced='';m.search='';m.searchDraft='';m.spatial=null;
+    m.selected.clear();m.quickOpen=false;rerender();apply(m);
+  }));
+  outer.insertBefore(chips,filters);
+ }
+ if(m.quickOpen)outer.insertBefore(quickFacetPane(m),filters);
+ filters.classList.add('gx-filter-pane');
+ filters.hidden=!m.advancedMode;
+ filters.querySelector('.ge-header .ge-h-title')?.replaceChildren(document.createTextNode('Advanced filters'));
  var settings=results.querySelector('.ge-table-settings');
  if(settings)settings.open=Boolean(m.settingsOpen);
- var actionMenu=results.querySelector('.ge-action-menu');
- if(actionMenu)actionMenu.open=Boolean(m.actionsOpen);
- if(summary)summary.hidden=true;
- if(inspector){
-  inspector.classList.add('gx-inspector');
-  if(m.detailId===null)inspector.hidden=true;
+ results.classList.add('gx-results');
+ var countLabel=results.querySelector('.ge-count');
+ if(countLabel){countLabel.classList.add('gx-results-count');countLabel.textContent=
+  m.count===null?(m.countError?'Count unavailable':'Counting…'):m.count.toLocaleString()+' matching records';}
+ var head=results.querySelector('.ge-results-head');
+ if(head){
+  head.querySelector('h3')?.replaceChildren(document.createTextNode('Attribute table'));
+  head.appendChild(el('span','gx-selection',m.selected.size?m.selected.size+' selected':'Select rows for actions'));
  }
+ if(summary)summary.hidden=true;
+ if(inspector){inspector.classList.add('gx-inspector');if(m.detailId===null)inspector.hidden=true;}
  if(m.detailId!==null)openInspector(m);
- // Automatically populate one bounded page. Never download an entire layer implicitly.
+ else clearInspector();
  if(!m.hasLoaded){
   m.hasLoaded=true;
-  Promise.resolve().then(()=>{if(C().state.url===m.url){G().loadRows(m);G().loadCount(m);}});
+  Promise.resolve().then(()=>{if(C().state.url===m.url&&C().state.tab==='data'){
+    G().loadRows(m);G().loadCount(m);
+  }});
  }
 }
+function updateCount(m){
+ if(C().state.url!==m.url)return;
+ var label=m.count===null?(m.countError?'Count unavailable':'Counting…'):m.count.toLocaleString()+' matching';
+ document.querySelectorAll('.gx-record-pill').forEach(x=>{x.textContent=label;x.title=m.countError||'Count of matching records from ArcGIS';});
+ document.querySelectorAll('.gx-results-count').forEach(x=>{x.textContent=m.count===null?(m.countError?'Count unavailable':'Counting…'):m.count.toLocaleString()+' matching records';x.title=m.countError||'Count of matching records from ArcGIS';});
+ var refresh=document.querySelector('.gx-results .ge-results-head>button');
+ if(refresh)refresh.disabled=Boolean(m.counting);
+}
+function updateSelection(m){
+ var node=document.querySelector('.gx-selection');
+ if(node)node.textContent=m.selected.size?m.selected.size+' selected':'Select rows for actions';
+}
+var inspectorKeyHandler=null;
 function clearInspector(){
+ if(inspectorKeyHandler){document.removeEventListener('keydown',inspectorKeyHandler);inspectorKeyHandler=null;}
  document.getElementById('gx-inspector-shade')?.remove();
  document.body.classList.remove('gx-inspector-visible');
 }
@@ -127,10 +333,13 @@ function openInspector(m){
  var shade=el('div','gx-inspector-shade');shade.id='gx-inspector-shade';
  function close(){m.detailId=null;clearInspector();rerender();}
  shade.addEventListener('click',close);
+ inspectorKeyHandler=event=>{if(event.key==='Escape'){event.preventDefault();close();}};
+ document.addEventListener('keydown',inspectorKeyHandler);
  document.body.appendChild(shade);document.body.classList.add('gx-inspector-visible');
  var top=el('div','gx-inspector-top');
  add(top,el('strong','','Record details'),button('Close ×','gx-tool-button',close));
  panel.insertBefore(top,panel.firstChild);
+ top.querySelector('button')?.focus({preventScroll:true});
 }
 function selectField(parent,list,value,onChange){
  var s=el('select','gx-select');list.forEach(f=>{var o=el('option','',fieldLabel(f));o.value=f.name;s.appendChild(o);});
@@ -204,8 +413,10 @@ function renderAnalyze(host){
    displayed.forEach(row=>{
     var label=row.raw===null?'(Null)':String(domain.find(x=>String(x.code)===String(row.raw))?.name??row.raw);
     var b=button('','gx-category',()=>{
-      m.filters.push({field:f.name,op:row.raw===null?'IS NULL':'=',value:row.raw===null?'':String(row.raw)});
-      m.page=0;m.count=null;m.ids=null;m.filtersOpen=false;m.where=G().buildWhere(m);
+      removeQuick(m,f.name);
+      m.quickFilters=m.quickFilters||[];
+      m.quickFilters.push({field:f.name,op:row.raw===null?'IS NULL':'=',value:row.raw===null?'':row.raw});
+      m.page=0;m.count=null;m.ids=null;m.quickOpen=false;m.where=G().buildWhere(m);
       C().setTab('data');apply(m);
     });
     var line=el('div','gx-category-line');
@@ -235,5 +446,5 @@ function renderAnalyze(host){
  }
  run();
 }
-window.GISWorkspace={decorate:decorate,openInspector:openInspector,clearInspector:clearInspector,renderAnalyze:renderAnalyze};
+window.GISWorkspace={decorate:decorate,openInspector:openInspector,clearInspector:clearInspector,renderAnalyze:renderAnalyze,updateCount:updateCount,updateSelection:updateSelection};
 })();

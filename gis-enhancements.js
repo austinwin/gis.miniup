@@ -18,7 +18,7 @@ function nameOfField(field){return field?.alias || field?.name || ''}
 function fieldType(field){return String(field?.type||'')}
 function oidField(){var d=metadata();return d.objectIdField||d.objectIdFieldName||(d.fields||[]).find(f=>f.type==='esriFieldTypeOID')?.name||'OBJECTID'}
 function getModel(){
- var url=layerUrl();if(!models.has(url))models.set(url,{url,filters:[],join:'AND',where:'1=1',advanced:'',page:0,pageSize:window.innerWidth<=700?25:100,sort:'',descending:false,records:[],selected:new Set(),hiddenFields:new Set(),columnsOpen:false,count:null,busy:false,error:'',warning:'',requestId:0,counting:false,lastQuery:'',spatial:null,ids:null,hasLoaded:false,detailId:null,stats:null});
+ var url=layerUrl();if(!models.has(url))models.set(url,{url,filters:[],quickFilters:[],quickOpen:false,advancedMode:false,join:'AND',where:'1=1',advanced:'',page:0,pageSize:window.innerWidth<=700?25:100,sort:'',descending:false,records:[],selected:new Set(),hiddenFields:new Set(),columnsOpen:false,count:null,busy:false,error:'',warning:'',requestId:0,counting:false,lastQuery:'',spatial:null,ids:null,hasLoaded:false,detailId:null,stats:null});
  return models.get(url);
 }
 function textSafe(value){if(value===null || value===undefined)return '—';if(typeof value==='object')return JSON.stringify(value);return String(value)}
@@ -54,7 +54,9 @@ function codeWhere(field,op,value){
 }
 function buildWhere(model,exclude){
  var filters=model.filters.filter(f=>f!==exclude).map(f=>codeWhere(f.field,f.op,f.value)).filter(Boolean);
+ var quick=(model.quickFilters||[]).map(f=>codeWhere(f.field,f.op,f.value)).filter(Boolean);
  var clauses=[];
+ if(quick.length)clauses.push('('+quick.join(' AND ')+')');
  if(filters.length)clauses.push('('+filters.join(' '+(model.join==='OR'?'OR':'AND')+' ')+')');
  if(model.search&&model.searchField){
    var field=(metadata().fields||[]).find(x=>x.name===model.searchField);
@@ -237,7 +239,7 @@ function renderData(host){
  add(actions,B('+ Add condition','ge-secondary',()=>{m.filters.push({field:metadata().fields[0]?.name||'',op:'=',value:''});renderData(host)}),
    E('span','ge-inline','Match'),join,
    B('Apply filters','ge-primary',()=>{m.page=0;m.tableScrollTop=0;m.count=null;m.ids=null;loadRows(m);loadCount(m);}),
-   B('Clear','ge-secondary',()=>{m.filters=[];m.advanced='';m.search='';m.page=0;m.count=null;m.ids=null;m.spatial=null;C().state.exportContext=null;renderData(host);loadRows(m);loadCount(m)}));
+   B('Clear','ge-secondary',()=>{m.filters=[];m.quickFilters=[];m.advanced='';m.search='';m.searchDraft='';m.page=0;m.count=null;m.ids=null;m.spatial=null;C().state.exportContext=null;renderData(host);loadRows(m);loadCount(m)}));
  filter.appendChild(actions);
  var preview=E('div','ge-preview');
  try{m.where=buildWhere(m);preview.textContent='WHERE '+m.where+(m.spatial?'  ·  Spatial extent filter active':'');}
@@ -373,28 +375,47 @@ function renderRows(root,m){
    check.addEventListener('change',()=>{
      if(check.checked)m.selected.add(key);else m.selected.delete(key);
      tr.classList.toggle('ge-row-selected',check.checked);
+    if(window.GISWorkspace)window.GISWorkspace.updateSelection(m);
    });
    cell.appendChild(check);tr.appendChild(cell);
    fields.forEach(f=>{
-     var value=val(f.name,attrs),td=E('td','',displayField(f,value));
-     var cv=f.domain?.codedValues?.find(v=>String(v.code)===String(value));
+     var value=val(f.name,attrs),cv=f.domain?.codedValues?.find(v=>String(v.code)===String(value));
+     var td=E('td','',cv?cv.name:displayField(f,value));
      td.title=cv?'Code '+textSafe(value)+' · '+cv.name:textSafe(value);
      tr.appendChild(td);
    });
-   tr.addEventListener('click',()=>{m.detailId=oid;renderRecordDetail(m);if(window.GISWorkspace)window.GISWorkspace.openInspector(m)});
+   var openRow=()=>{m.detailId=oid;renderRecordDetail(m);if(window.GISWorkspace)window.GISWorkspace.openInspector(m)};
+   tr.tabIndex=0;
+   tr.addEventListener('click',openRow);
+   tr.addEventListener('keydown',event=>{if(event.target!==tr)return;if(event.key==='Enter'||event.key===' '){event.preventDefault();openRow();}});
    tbody.appendChild(tr);
  });
  table.appendChild(tbody);root.appendChild(table);
 }
 async function loadCount(m){
- m.counting=true;m.countError='';if(m===models.get(layerUrl())&&current()?.tab==='data')renderData(document.getElementById('content'));
+ // Count requests may finish out of order when a user changes filters quickly.
+ var rid=m.countRequestId=(m.countRequestId||0)+1;
+ m.counting=true;m.countError='';
+ if(window.GISWorkspace)window.GISWorkspace.updateCount(m);
  try{
    var where=buildWhere(m),p={where,returnCountOnly:'true'};
    Object.assign(p,spatialParams(m));
    var data=await C().post(m.url+'/query',p);
-   m.count=Number(data.count)||0;m.error='';
- }catch(e){m.countError='Count: '+e.message;}
- finally{m.counting=false;if(m.url===layerUrl()){if(C().renderStats)C().renderStats();if(current()?.tab==='data')renderData(document.getElementById('content'));}}
+   if(rid!==m.countRequestId)return;
+   if(!Number.isFinite(Number(data.count)))throw Error('The server did not return a valid record count.');
+   m.count=Number(data.count);
+ }catch(e){
+   if(rid!==m.countRequestId)return;
+   m.count=null;m.countError='Count: '+e.message;
+ }finally{
+   if(rid===m.countRequestId){
+     m.counting=false;
+     if(m.url===layerUrl()){
+       if(C().renderStats)C().renderStats();
+       if(window.GISWorkspace)window.GISWorkspace.updateCount(m);
+     }
+   }
+ }
 }
 function spatialParams(m){
  if(!m.spatial)return {};
@@ -496,7 +517,9 @@ async function renderRecordDetail(m,override){
  host.appendChild(line);
  var dl=E('dl','ge-attribute-grid');
  (metadata().fields||[]).forEach(f=>{
-   add(dl,E('dt','',nameOfField(f)),E('dd','',displayField(f,val(f.name,row.attributes||{}))));
+   var v=val(f.name,row.attributes||{});
+   var cv=f.domain?.codedValues?.find(x=>String(x.code)===String(v));
+   add(dl,E('dt','',nameOfField(f)),E('dd','',cv?cv.name+' (code: '+v+')':displayField(f,v)));
  });
  var scroll=E('div','ge-detail-scroll');scroll.appendChild(dl);host.appendChild(scroll);
  var more=E('div','ge-flex ge-controls');

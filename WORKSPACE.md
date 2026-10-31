@@ -2,6 +2,22 @@
 
 GIS Explorer is a read-only browser for public and authorized ArcGIS REST services. Its layer workspace prioritizes **Explore**, **Analyze**, and **Map**. Other resource tools are available under **More**.
 
+## Simplified experience (October 2026 refinement)
+
+**Default workflow:** Open a queryable layer to see its compact, dense data table immediately. The large layer-statistic cards are omitted in favor of a small matching-record count. Search a selected text or number field, press Enter, use **+ Filter** to choose a commonly occurring value from a server query, and select a row to open the inspector. Sort any visible column by clicking its heading. The dense table continues to scroll in both directions on phones.
+
+- **+ Filter:** choose a field and a value; when the server supports grouping, category counts are calculated from the matching dataset. Fallbacks use distinct values or the field's coded-value domain. A partial-results notice is shown when the server caps the number of categories. Quick filters always combine with existing conditions using AND.
+- **Columns:** change visible columns without opening other table settings. **Actions:** selection, map shortcuts, export, and locally saved views. Table settings still contain page size, sort controls, and date-zone display.
+- **Advanced:** the original typed condition builder, AND/OR grouping, SQL expression, and on-demand unique-value searching. Advanced conditions remain combined with quick filters and search using AND, so OR groups do not unexpectedly broaden a quick selection.
+- **Analyze:** full-server aggregate counts and numeric statistics, with click-to-filter categories. No global totals are inferred from one table page.
+- **Map:** use current attribute and spatial filters. The map remains a bounded visual preview rather than a guarantee that all records are rendered.
+
+The record inspector supports Enter and Space on a focused row, closes with Escape, and includes descriptive names for coded-value attributes. Saved views store only their user-selected configuration in the current browser, never tokens or fetched records. Count requests ignore stale results and do not rebuild the table while a user types.
+
+## Regression checks
+
+Run `node --test tests/*.test.cjs`, including `tests/workspace-query.test.cjs`, and `node --check app.js && node --check gis-enhancements.js && node --check gis-workspace.js`. Check a live FeatureServer and MapServer in both public and authenticated sessions; tests do not replace browser and ArcGIS-service integration checks.
+
 ## How to use
 
 1. Paste an ArcGIS REST services URL and open a queryable layer or table from the directory.

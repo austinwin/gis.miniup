@@ -621,6 +621,9 @@
   }
   function renderStats() {
     var host=clear($('statGrid'));
+    // A compact record summary lives inside the layer workspace; keep directory/service stats.
+    host.hidden=queryCapable();
+    if(host.hidden)return;
     stats().forEach(function(s){
       var c=el('div','stat'), value=formatNum(s[1]);
       c.title=s[0]+': '+value+' — '+s[2];
