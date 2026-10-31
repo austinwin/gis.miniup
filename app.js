@@ -622,7 +622,7 @@
   function renderStats() {
     var host=clear($('statGrid'));
     // A compact record summary lives inside the layer workspace; keep directory/service stats.
-    host.hidden=queryCapable();
+    host.hidden=queryCapable() || state.tab==='map';
     if(host.hidden)return;
     stats().forEach(function(s){
       var c=el('div','stat'), value=formatNum(s[1]);
@@ -654,7 +654,7 @@
   function setTab(tab) {
     if(state.tab==='map')cleanupMap();
     if(window.GISWorkspace)window.GISWorkspace.clearInspector();
-    state.tab=tab;renderTabs();renderContent();
+    state.tab=tab;renderStats();renderTabs();renderContent();
   }
   function renderTabs() {
     var host=clear($('tabs')),tabs=availableTabs();

@@ -132,3 +132,11 @@
 .ms-more-menu{position:absolute;z-index:990;right:0;top:calc(100% + 6px);display:flex;flex-direction:column;gap:5px;min-width:195px;padding:8px;border:1px solid #d2dfe9;border-radius:8px;box-shadow:0 10px 30px rgba(15,41,66,.17);background:#fff}
 .ms-more-menu button{width:100%;text-align:left}
 @media(max-width:700px){.ms-more>summary{padding:7px 9px;min-height:35px;font-size:11px}}
+
+/* Keep Map Studio above the fold on phones and compact the surrounding resource header. */
+.main:has(.ms-shell) .page-intro{padding:10px 0 12px}
+.main:has(.ms-shell) .intro-icon{width:36px;height:36px;font-size:18px}
+.main:has(.ms-shell) .intro-titles h1{font-size:18px}
+.main:has(.ms-shell) .breadcrumbs{height:42px}
+.main:has(.ms-shell) .tabs{margin-bottom:10px}
+@media(max-width:700px){.main:has(.ms-shell) .page-intro{padding:8px 0}.main:has(.ms-shell) .intro-titles h1{font-size:16px}}
