@@ -1361,7 +1361,7 @@ body.gis-resizing,body.gis-resizing *{cursor:col-resize!important;user-select:no
 }
 
 
-/* Data explorer: compact controls, server value pickers and mobile record cards. */
+/* Attribute explorer: server-backed value pickers and compact sortable tables. */
 .ge-value-input{display:flex;align-items:center;gap:6px;min-width:0}
 .ge-value-input>.ge-input,.ge-value-input>.ge-select{min-width:0;flex:1}
 .ge-value-input>.ge-secondary{flex:none;min-height:39px}
@@ -1381,19 +1381,27 @@ body.gis-resizing,body.gis-resizing *{cursor:col-resize!important;user-select:no
 .ge-column-options{display:grid;grid-template-columns:1fr;gap:3px;margin-top:8px}
 .ge-column-options label{display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:12px;color:#324c64;overflow-wrap:anywhere}
 .ge-column-options input{flex:none;accent-color:#1e659e}
-.ge-table-meta{font-size:12px;color:#60768a;margin:7px 0}
-.ge-mobile-records{display:none}
-.ge-record-card{border:1px solid #dce6ef;border-radius:8px;background:#fff;padding:11px 12px;min-width:0}
-.ge-record-card.ge-row-selected{border-color:#8db4d9}
-.ge-record-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
-.ge-record-top label{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#20384f;min-width:0}
-.ge-record-top input{width:19px;height:19px;accent-color:#1e659e}
-.ge-record-preview{display:grid;grid-template-columns:minmax(84px,37%) minmax(0,1fr);gap:6px 9px;margin:0;font-size:12px}
-.ge-record-preview dt{color:#64778a;font-weight:600;overflow-wrap:anywhere}
-.ge-record-preview dd{margin:0;color:#20384f;overflow-wrap:anywhere}
+.ge-table-meta{font-size:11.5px;color:#60768a;margin:8px 0 10px;line-height:1.45}
+.ge-table-settings>summary{display:none}
+.ge-table-settings .ge-controls{margin:10px 0}
+#geTable{width:100%;max-width:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#b3c6d7 #f4f7fa;-webkit-overflow-scrolling:touch}
+#geTable:focus-visible{outline:2px solid #94bce0;outline-offset:2px}
+#geTable .ge-data-table{display:table;width:max-content;min-width:100%;font-size:12px;font-variant-numeric:tabular-nums}
+#geTable .ge-data-table th{padding:0;vertical-align:middle}
+#geTable .ge-data-table th:first-child{padding:7px 9px}
+#geTable .ge-data-table td{padding:6px 9px;height:31px;max-width:215px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#geTable .ge-data-table tbody tr:nth-child(even){background:#f9fbfd}
+#geTable .ge-data-table tbody tr:hover{background:#edf5fd}
+#geTable .ge-data-table tbody tr.ge-row-selected{background:#e6f2ff}
+#geTable .ge-data-table input[type=checkbox]{width:16px;height:16px;vertical-align:middle}
+.ge-sort-button{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:8px 9px;font:inherit;font-size:11.5px;font-weight:700;line-height:1.2;cursor:pointer;white-space:nowrap}
+.ge-sort-button:hover,.ge-sort-button:focus-visible{background:#deebf7;color:#155282;outline-offset:-2px}
+.ge-action-menu{min-width:0}
+.ge-action-menu>summary{display:none}
+.ge-action-menu>.ge-actions{margin-top:2px}
 @media(max-width:700px){
  .ge-workspace{gap:11px}
- .ge-card{padding:12px}
+ .ge-card{padding:11px}
  .ge-results-head{gap:7px}
  .ge-results-head .ge-count{font-size:11px}
  .ge-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
@@ -1407,29 +1415,31 @@ body.gis-resizing,body.gis-resizing *{cursor:col-resize!important;user-select:no
  .ge-controls{align-items:center}
  .ge-controls .ge-select{max-width:none;flex:1 1 125px}
  .ge-column-panel{position:static;width:100%;max-height:260px;box-shadow:none;margin-top:7px}
- .ge-table-scroll{overflow:visible;max-height:none;border:0}
- .ge-data-table{display:none}
- .ge-mobile-records{display:grid;gap:8px}
+ .ge-action-menu>summary,.ge-table-settings>summary{display:list-item;cursor:pointer;padding:9px 11px;border:1px solid #d5e1eb;border-radius:6px;background:#f7fafc;color:#285d89;font-size:12px;font-weight:650}
+ .ge-action-menu[open]>.ge-actions{margin:10px 0 0;padding:0 0 9px}
+ .ge-table-settings[open]>.ge-controls{margin:8px 0 0}
+ .ge-table-meta{margin:7px 1px}
+ #geTable{height:min(60dvh,510px);max-height:min(60dvh,510px);min-height:190px;overflow-x:auto;overflow-y:auto;touch-action:pan-x pan-y;border:1px solid #d7e2ed;border-radius:7px}
+ #geTable .ge-data-table{display:table;font-size:12px;min-width:100%;width:max-content}
+ #geTable .ge-data-table th{position:sticky;top:0;z-index:2;background:#e9f0f6;border-bottom:1px solid #cbd8e5;max-width:195px}
+ #geTable .ge-data-table td{padding:5px 8px;height:29px;max-width:195px}
+ #geTable .ge-sort-button{min-height:34px;padding:8px;font-size:11.5px}
+ /* Pin selection and the first visible attribute, while the rest move horizontally. */
+ #geTable .ge-data-table th:first-child,#geTable .ge-data-table td:first-child{
+   position:sticky;left:0;box-sizing:border-box;width:46px;min-width:46px;max-width:46px;
+   background:#f5f8fb;z-index:3;text-align:center;border-right:1px solid #dce6ef;
+ }
+ #geTable .ge-data-table th:first-child{z-index:6;background:#e9f0f6}
+ #geTable .ge-data-table th:nth-child(2),#geTable .ge-data-table td:nth-child(2){
+   position:sticky;left:46px;box-sizing:border-box;width:120px;min-width:120px;max-width:120px;
+   background:#f8fafc;z-index:3;box-shadow:2px 0 0 #dce6ef;
+ }
+ #geTable .ge-data-table th:nth-child(2){z-index:5;background:#e9f0f6}
+ #geTable .ge-data-table tbody tr.ge-row-selected td:first-child,
+ #geTable .ge-data-table tbody tr.ge-row-selected td:nth-child(2){background:#e6f2ff}
+ #geTable .ge-data-table td:nth-child(2){text-overflow:ellipsis}
+ #geTable .ge-data-table th:nth-child(2) .ge-sort-button{overflow:hidden;text-overflow:ellipsis}
  .ge-pagination{justify-content:space-between}
  .ge-pagination .ge-secondary{min-height:40px}
- .ge-detail-scroll{max-height:none}
-}
-
-/* Keep the action toolbar tucked away on narrow screens. */
-.ge-action-menu{min-width:0}
-.ge-action-menu>summary{display:none}
-.ge-action-menu>.ge-actions{margin-top:2px}
-@media(max-width:700px){
- .ge-action-menu>summary{display:list-item;cursor:pointer;padding:10px 12px;border:1px solid #d5e1eb;border-radius:6px;background:#f7fafc;color:#285d89;font-size:12.5px;font-weight:650}
- .ge-action-menu[open]>.ge-actions{margin:10px 0 0;padding:0 0 9px}
-}
-
-/* Expanded mobile records stay beside the chosen record rather than jumping to the page footer. */
-.ge-inline-detail{margin-top:11px;padding-top:10px;border-top:1px solid #e1e9f1;min-width:0}
-.ge-inline-detail .ge-attribute-grid{grid-template-columns:minmax(82px,36%) minmax(0,1fr)}
-.ge-inline-detail .ge-detail-scroll{max-height:none}
-@media(max-width:700px){
- #geRecordDetails{display:none}
- .ge-inline-detail .ge-flex{gap:7px}
- .ge-inline-detail .ge-attribute-grid dt,.ge-inline-detail .ge-attribute-grid dd{padding:8px 6px}
+ .ge-detail-scroll{max-height:340px}
 }

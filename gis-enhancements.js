@@ -207,6 +207,11 @@ function renderColumnPicker(m){
  panel.appendChild(options);d.appendChild(panel);return d;
 }
 function renderData(host){
+ // Capture the real table's position before removing it; loading views have no scroll.
+ var prior=host.querySelector('#geTable'),model=isLayer()?getModel():null;
+ if(prior && prior.querySelector('table') && model){
+   model.tableScrollLeft=prior.scrollLeft;model.tableScrollTop=prior.scrollTop;
+ }
  host.replaceChildren();
  if(!isLayer()){host.appendChild(E('p','ge-muted','Select a queryable feature layer or table.'));return;}
  var m=getModel(),outer=E('div','ge-workspace'),filter=E('section','ge-card');
@@ -219,7 +224,7 @@ function renderData(host){
  join.addEventListener('change',()=>{m.join=join.value});
  add(actions,B('+ Add condition','ge-secondary',()=>{m.filters.push({field:metadata().fields[0]?.name||'',op:'=',value:''});renderData(host)}),
    E('span','ge-inline','Match'),join,
-   B('Apply filters','ge-primary',()=>{m.page=0;m.count=null;m.ids=null;loadRows(m);}),
+   B('Apply filters','ge-primary',()=>{m.page=0;m.tableScrollTop=0;m.count=null;m.ids=null;loadRows(m);}),
    B('Clear','ge-secondary',()=>{m.filters=[];m.advanced='';m.page=0;m.count=null;m.ids=null;m.spatial=null;C().state.exportContext=null;renderData(host);loadRows(m)}));
  filter.appendChild(actions);
  var preview=E('div','ge-preview');
@@ -250,18 +255,28 @@ function renderData(host){
  actionMenu.addEventListener('toggle',()=>{m.actionsOpen=actionMenu.open});
  actionMenu.appendChild(E('summary','','Map, selection & export actions'));
  actionMenu.appendChild(rowActions);results.appendChild(actionMenu);
+ var settings=E('details','ge-table-settings');
+ settings.open=window.innerWidth>700||Boolean(m.settingsOpen);
+ settings.addEventListener('toggle',()=>{m.settingsOpen=settings.open});
+ settings.appendChild(E('summary','','Table settings · '+m.pageSize+' rows · '+(metadata().fields||[]).length+' columns'));
  var config=E('div','ge-flex ge-controls');
  var sizes=E('select','ge-select ge-small');[25,50,100,200,500].forEach(n=>{var o=E('option','',n+' rows / page');o.value=n;sizes.appendChild(o)});
  sizes.value=m.pageSize;
- sizes.addEventListener('change',()=>{m.pageSize=Number(sizes.value);m.page=0;loadRows(m)});
+ sizes.addEventListener('change',()=>{m.pageSize=Number(sizes.value);m.page=0;m.tableScrollTop=0;loadRows(m)});
  var sorting=fieldPick(m.sort,(field)=>{m.sort=field;m.page=0;loadRows(m)});
  var order=E('select','ge-select ge-small');[['ASC','Ascending'],['DESC','Descending']].forEach(x=>{var o=E('option','',x[1]);o.value=x[0];order.appendChild(o)});
  order.value=m.descending?'DESC':'ASC';order.addEventListener('change',()=>{m.descending=order.value==='DESC';m.page=0;loadRows(m)});
  add(config,sizes,E('span','ge-inline','Sort by'),sorting,order,renderColumnPicker(m),
   B('Dates: '+window.GISFields.getZone(),'ge-secondary',()=>{window.GISFields.setZone(window.GISFields.getZone()==='UTC'?'local':'UTC');renderData(host)}));
- results.appendChild(config);
- results.appendChild(E('p','ge-table-meta','Tap a record to inspect all attributes. Date/time values shown in '+window.GISFields.getZone()+'.'));
+ settings.appendChild(config);results.appendChild(settings);
+ var visibleCount=(metadata().fields||[]).filter(f=>!m.hiddenFields.has(f.name)).length;
+ results.appendChild(E('p','ge-table-meta',
+   visibleCount+' columns · Swipe horizontally to see fields; scroll vertically for rows. Tap a column heading to sort. Dates: '+window.GISFields.getZone()+'.'));
  var body=E('div','ge-table-scroll');body.id='geTable';
+ body.tabIndex=0;
+ body.setAttribute('role','region');
+ body.setAttribute('aria-label','Scrollable GIS attribute table. Swipe horizontally for more columns and vertically for more rows.');
+ body.addEventListener('scroll',()=>{if(body.isConnected && body.querySelector('table')){m.tableScrollLeft=body.scrollLeft;m.tableScrollTop=body.scrollTop}},{passive:true});
  if(m.busy)body.appendChild(E('p','ge-muted','Loading records…'));
  else if(m.error)body.appendChild(E('p','ge-error',m.error));
  else if(!m.hasLoaded)body.appendChild(E('p','ge-muted','Click Apply filters to retrieve the first page.'));
@@ -270,8 +285,8 @@ function renderData(host){
  results.appendChild(body);
  if(m.warning)results.appendChild(E('p','ge-muted',m.warning));
  var pager=E('div','ge-flex ge-pagination');
- var prev=B('← Previous','ge-secondary',()=>{m.page--;loadRows(m)});prev.disabled=m.page<=0||m.busy;
- var next=B('Next →','ge-secondary',()=>{m.page++;loadRows(m)});
+ var prev=B('← Previous','ge-secondary',()=>{m.page--;m.tableScrollTop=0;loadRows(m)});prev.disabled=m.page<=0||m.busy;
+ var next=B('Next →','ge-secondary',()=>{m.page++;m.tableScrollTop=0;loadRows(m)});
  next.disabled=m.busy || m.records.length<m.pageSize || (m.count!==null && (m.page+1)*m.pageSize>=m.count);
  add(pager,prev,E('span','ge-muted','Page '+(m.page+1)),next);
  results.appendChild(pager);outer.appendChild(results);
@@ -306,38 +321,46 @@ function renderData(host){
  }));
  summary.appendChild(statRow);summary.appendChild(statResults);outer.appendChild(summary);
  var details=E('section','ge-card ge-detail');
- details.id='geRecordDetails';outer.appendChild(details);
+ details.id='geRecordDetails';outer.insertBefore(details,summary);
  host.appendChild(outer);
+ if(m.hasLoaded && !m.busy && !m.error && m.records.length){
+   body.scrollLeft=m.tableScrollLeft||0;
+   body.scrollTop=m.tableScrollTop||0;
+ }
  if(m.detailId!==null)renderRecordDetail(m);
  else showStatus(details,'Select a row to inspect its fields, related records, and attachments.',false);
 }
 function renderRows(root,m){
  var fields=(metadata().fields||[]).filter(f=>!m.hiddenFields.has(f.name));
  var table=E('table','ge-data-table'),thead=E('thead'),head=E('tr');
- head.appendChild(E('th','','Select'));
+ var selectHeader=E('th','','✓');selectHeader.scope='col';selectHeader.title='Select records';selectHeader.setAttribute('aria-label','Select records');head.appendChild(selectHeader);
  fields.forEach(f=>{
-   var h=E('th','ge-sortable-header',nameOfField(f)+(m.sort===f.name?(m.descending?' ↓':' ↑'):''));
+   var h=E('th','ge-sortable-header');h.scope='col';
    h.title='Sort by '+f.name+' · '+(f.type||'');
-   h.tabIndex=0;h.setAttribute('role','button');h.setAttribute('aria-label','Sort table by '+f.name);
-   var sortColumn=function(){m.descending=m.sort===f.name?!m.descending:false;m.sort=f.name;m.page=0;loadRows(m)};
-   h.addEventListener('click',sortColumn);
-   h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sortColumn()}});
-   head.appendChild(h);
+   h.setAttribute('aria-sort',m.sort===f.name?(m.descending?'descending':'ascending'):'none');
+   var sortColumn=()=>{
+     m.tableScrollLeft=root.scrollLeft;
+     m.tableScrollTop=0;
+     m.descending=m.sort===f.name?!m.descending:false;
+     m.sort=f.name;m.page=0;
+     loadRows(m);
+   };
+   var b=B(nameOfField(f)+(m.sort===f.name?(m.descending?' ↓':' ↑'):' ↕'),'ge-sort-button',sortColumn);
+   b.setAttribute('aria-label','Sort '+nameOfField(f)+(m.sort===f.name?(m.descending?' ascending':' descending'):' ascending'));
+   h.appendChild(b);head.appendChild(h);
  });
  thead.appendChild(head);table.appendChild(thead);
- var tbody=E('tbody'),cards=E('div','ge-mobile-records');
- var preview=fields.slice().sort((a,b)=>{
-   var rank=f=>f.name===metadata().displayField?0:f.name===oidField()?1:2;
-   return rank(a)-rank(b);
- }).slice(0,4);
- function openRecord(oid){m.detailId=oid;renderRecordDetail(m)}
+ var tbody=E('tbody');
  m.records.forEach(feature=>{
    var attrs=feature.attributes||{},oid=val(oidField(),attrs),key=String(oid);
    var tr=E('tr',m.selected.has(key)?'ge-row-selected':'');
    var cell=E('td'),check=E('input');check.type='checkbox';check.checked=m.selected.has(key);
    check.setAttribute('aria-label','Select record '+textSafe(oid));
    check.addEventListener('click',e=>e.stopPropagation());
-   check.addEventListener('change',()=>{if(check.checked)m.selected.add(key);else m.selected.delete(key);tr.classList.toggle('ge-row-selected',check.checked)});
+   check.addEventListener('change',()=>{
+     if(check.checked)m.selected.add(key);else m.selected.delete(key);
+     tr.classList.toggle('ge-row-selected',check.checked);
+   });
    cell.appendChild(check);tr.appendChild(cell);
    fields.forEach(f=>{
      var value=val(f.name,attrs),td=E('td','',displayField(f,value));
@@ -345,33 +368,10 @@ function renderRows(root,m){
      td.title=cv?'Code '+textSafe(value)+' · '+cv.name:textSafe(value);
      tr.appendChild(td);
    });
-   tr.addEventListener('click',()=>openRecord(oid));tbody.appendChild(tr);
-   var card=E('article','ge-record-card'+(m.selected.has(key)?' ge-row-selected':''));
-   var top=E('div','ge-record-top'),label=E('label'),pick=E('input');
-   pick.type='checkbox';pick.checked=m.selected.has(key);
-   pick.setAttribute('aria-label','Select record '+textSafe(oid));
-   pick.addEventListener('change',()=>{
-     if(pick.checked)m.selected.add(key);else m.selected.delete(key);
-     card.classList.toggle('ge-row-selected',pick.checked);
-     check.checked=pick.checked;tr.classList.toggle('ge-row-selected',pick.checked);
-   });
-   add(label,pick,E('span','','Record '+textSafe(oid)));
-   var isExpanded=m.detailId!==null && String(m.detailId)===key;
-   add(top,label,B(isExpanded?'Close':'Details','ge-secondary',()=>{
-     m.detailId=isExpanded?null:oid;
-     renderData(document.getElementById('content'));
-     if(m.detailId!==null)document.getElementById('geMobileDetail')?.scrollIntoView({behavior:'smooth',block:'nearest'});
-   }));card.appendChild(top);
-   var dl=E('dl','ge-record-preview');
-   preview.forEach(f=>add(dl,E('dt','',nameOfField(f)),E('dd','',displayField(f,val(f.name,attrs)))));
-   card.appendChild(dl);
-   if(isExpanded){
-     var inline=E('div','ge-inline-detail');inline.id='geMobileDetail';
-     card.appendChild(inline);renderRecordDetail(m,inline);
-   }
-   cards.appendChild(card);
+   tr.addEventListener('click',()=>{m.detailId=oid;renderRecordDetail(m)});
+   tbody.appendChild(tr);
  });
- table.appendChild(tbody);root.appendChild(table);root.appendChild(cards);
+ table.appendChild(tbody);root.appendChild(table);
 }
 async function loadCount(m){
  m.counting=true;if(m===models.get(layerUrl())&&current()?.tab==='data')renderData(document.getElementById('content'));
