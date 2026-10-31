@@ -35,20 +35,19 @@ function discovery(s,p){
     A(row,E('strong','',String(item.title||'Untitled').slice(0,150)),
       E('p','gp-note',String(item.owner||'Unknown publisher')+' · '+String(item.type||'')),
       E('p','gp-note',String(item.snippet||'').replace(/<[^>]*>/g,'').slice(0,170)));
-    let actions=E('div','gp-inline');
-    let preview=B('Browse layers','gp-secondary',async()=>{
-     if(!url)return;try{await api().browse(s,url);}catch(e){msg(results,e.message,'gp-error');}
-    });
-    let add=B('Add to map','gp-primary',async()=>{
-     if(!url)return;add.disabled=true;
-     try{
-      if(/\/\d+$/.test(url))await api().addLayer(s,url);
-      else await api().browse(s,url);
-     }catch(e){msg(results,'Could not add: '+e.message,'gp-error');}
-     finally{add.disabled=false;}
-    });
+    let actions=E('div','gp-inline'),choices=E('div','ms-import-result');
+    const choose=async(forceChoose)=>{
+     if(!url||!window.GISServiceImport){msg(choices,'Layer import is unavailable. Try Add URL.','gp-error');return;}
+     const active=forceChoose?preview:add;
+     active.disabled=true;
+     try{await window.GISServiceImport.pick(s,url,choices,{forceChoose});}
+     catch(e){msg(choices,'Unable to open service layers: '+e.message,'gp-error');}
+     finally{active.disabled=false;}
+    };
+    let preview=B('Browse layers','gp-secondary',()=>choose(true));
+    let add=B('Add to map','gp-primary',()=>choose(false));
     preview.disabled=add.disabled=!url;
-    A(actions,preview,add);row.appendChild(actions);results.appendChild(row);
+    A(actions,preview,add);row.appendChild(actions);row.appendChild(choices);results.appendChild(row);
    });
    if(!data.results?.length)msg(results,'No indexed public services found. Try broader keywords or paste a service URL.');
    let total=Number(data.total)||0;

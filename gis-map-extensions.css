@@ -1,0 +1,37 @@
+/* GIS Map Studio: public service picker and safe point symbol gallery */
+.ms-import-result,.ms-import-picker{min-width:0;margin:8px 0}
+.ms-import-result:empty,.ms-import-picker:empty{display:none}
+.ms-import-result{border-top:1px solid #e1eaf1;padding-top:8px}
+.ms-import-picker:not(:empty){border:1px solid #d9e6f0;border-radius:8px;padding:10px;background:#fbfdff}
+.ms-import-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:3px 0}
+.ms-import-title strong{font-size:12px;color:#24425d;overflow-wrap:anywhere}
+.ms-import-close{border:1px solid #d3e0eb;border-radius:6px;background:#fff;color:#49677f;min-width:34px;height:34px;font-size:21px;cursor:pointer}
+.ms-import-status{font-size:11px;line-height:1.5;color:#245b88;margin:6px 0;overflow-wrap:anywhere}
+.ms-import-status.is-error{color:#aa4840}
+.ms-import-hint{font-size:11px;line-height:1.5;color:#698199;margin:5px 0 9px}
+.ms-import-list{display:flex;flex-direction:column;gap:3px;max-height:min(31dvh,270px);overflow:auto;margin:8px 0;padding:4px 0;overscroll-behavior:contain}
+.ms-import-item{display:flex;gap:8px;align-items:center;min-height:38px;border:1px solid #e5edf4;border-radius:6px;padding:7px 8px;font-size:12px;color:#304e69;cursor:pointer;background:#fff}
+.ms-import-item:hover{background:#edf6ff}
+.ms-import-item input{width:17px;height:17px;accent-color:#286da9;flex:none}
+.ms-import-item-label{min-width:0;flex:1;overflow-wrap:anywhere}
+.ms-import-default{color:#6d879b;background:#f1f6fa;padding:3px 6px;border-radius:4px;font-size:10px}
+.ms-import-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:9px 0}
+.ms-import-actions button{min-height:36px}
+.ms-symbol-picker{border-top:1px solid #dbe7f0;margin:14px 0 0;padding-top:12px;min-width:0}
+.ms-symbol-picker h3{font-size:13px;margin:0 0 9px;color:#294862}
+.ms-symbol-types{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-bottom:9px}
+.ms-symbol-types .ms-mode{font-size:11px;min-width:0}
+.ms-symbol-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:8px 0}
+.ms-symbol-choice{min-width:0;min-height:41px;aspect-ratio:1;display:grid;place-items:center;border:1px solid #cfdae6;border-radius:8px;background:#fff;font-size:19px;cursor:pointer}
+.ms-symbol-choice:hover,.ms-symbol-choice:focus-visible{background:#edf6ff;border-color:#91badb}
+.ms-symbol-choice.is-selected{background:#e1f1ff;border-color:#2c79b4;box-shadow:inset 0 0 0 1px #2c79b4}
+.ms-symbol-choice svg{width:25px;height:25px}
+.ms-symbol-custom{display:flex;flex-direction:column;gap:5px;font-size:11px;color:#54718b;margin:8px 0}
+.ms-symbol-custom input{width:100%;max-width:100%}
+.ms-symbol-preview{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:8px;background:#f4f8fc;color:#536e85;font-size:11px}
+.ms-symbol-marker{border:0!important;background:transparent!important}
+.ms-point-symbol{display:grid;place-items:center;box-sizing:border-box;border:2px solid;border-radius:50%;box-shadow:0 2px 7px rgba(10,39,64,.24);text-align:center;line-height:1;user-select:none}
+.ms-point-symbol-emoji{background:#fff!important}
+.ms-point-symbol-lucide{border-width:2px}
+.ms-point-symbol svg{display:block;pointer-events:none}
+@media(max-width:700px){.ms-symbol-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.ms-import-list{max-height:27dvh}.ms-symbol-choice{min-height:40px}}

@@ -8,6 +8,22 @@ On mobile, the **main app's More menu** now overlays the Map Studio surface rath
 
 The floating map toolbar has just **Fit** and **Tools**. Tools contains **Use visible area**, **Draw selection box**, and **Clear map selection**. This keeps the map usable on a small screen and puts optional selection actions one tap away. The panel header stays visible when scrolling a long list of layers.
 
+## Public layer import and point symbols (October 31 refinement)
+
+**Search results now add actual sublayers.** ArcGIS Online commonly returns service-root URLs such as `.../FeatureServer` without a numbered layer. Previously, **Add to map** merely browsed that service and could leave the map at zero layers. The new behavior is:
+
+- **Single sublayer:** Add to map imports it immediately.
+- **Multiple sublayers:** Add to map opens a selectable sublayer list directly under that search result. Default-visible layers are preselected (up to three). Click **Add selected** to import up to the remaining map capacity (16 layers total).
+- **Browse layers:** Opens the same picker without automatically importing a single sublayer.
+- **Paste a service URL:** Uses the picker in the Add panel; individual numbered layer URLs still add directly.
+- **Failures:** Metadata errors (CORS, unavailable services, authentication) appear inline. Imported layers may subsequently show feature-query errors in the Layers panel; importing metadata does not guarantee that a remote service permits rendering.
+
+**Point symbol styles:** In Layers → Style, point layers now offer **Circle**, **Emoji**, and **SVG icons**. Choose from preset emojis or enter a short custom emoji; the SVG icon gallery contains trusted Lucide-style paths for common map subjects including location, water, utilities, warning, facility, and trees. Color, size and opacity remain available. Symbols work on ordinary point layers and individual points in clustered layers. Heat-density views intentionally ignore individual point symbols. Chosen symbols are preserved with saved layouts and exported map projects.
+
+The app never injects a user's text as SVG/HTML. Arbitrary SVG uploads or external SVG URLs are intentionally not supported until a safe asset/sanitization pipeline exists.
+
+**Verification:** The repository includes `tests/map-import-symbols.test.cjs`, covering service-root selection, single/multiple layer imports, metadata failures, safe symbol rendering and persistence. Live public-service CORS behavior still needs browser testing.
+
 ## Everyday workflow
 
 Open **Map** from any ArcGIS directory, service, or layer. The current spatial layer (or a few default-visible layers from its service) loads automatically; otherwise click **+ Layer**. Browse the current server's folders, services, and published layers, or paste an HTTPS \`FeatureServer/{id}\` or \`MapServer/{id}\` URL. Show/hide layers, move them up/down, zoom to their extent, open their attribute table, or remove them. The map stays visible while working with the layer list. On mobile the list is a collapsible overlay and is initially closed.

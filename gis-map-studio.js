@@ -52,7 +52,8 @@ function validStyle(raw){
   weight:Math.max(1,Math.min(12,Number(d.weight)||2)),radius:Math.max(3,Math.min(16,Number(d.radius)||6)),
   opacity:Math.max(.1,Math.min(1,Number(d.opacity)||.85)),
   fillOpacity:Math.max(0,Math.min(.9,Number(d.fillOpacity)===0?0:Number(d.fillOpacity)||.25)),
-  dash:['solid','dash','dot'].includes(d.dash)?d.dash:'solid'};
+  dash:['solid','dash','dot'].includes(d.dash)?d.dash:'solid',
+  symbol:window.GISPointSymbols?.validSymbol(d.symbol)||{type:'circle',icon:'map-pin',emoji:'📍'}};
 }
 function makeLayer(url,meta,previous){
  return {id:++SEQ,url,name:meta.name||('Layer '+meta.id),geom:meta.geometryType||'',fields:meta.fields||[],
@@ -271,18 +272,25 @@ function renderFeatures(s,layer){
   var group=L().markerClusterGroup({chunkedLoading:true,showCoverageOnHover:false,maxClusterRadius:55,clusterPane:paneName(layer)});
   features.forEach(f=>{
    var g=rawGeometry(f);if(g?.type!=='Point')return;
-   var icon=el('span','ms-cluster-symbol');icon.style.backgroundColor=layer.style.fill;
-   icon.style.borderColor=layer.style.color;
-   var marker=L().marker([g.coordinates[1],g.coordinates[0]],{
+   var marker;
+   if(window.GISPointSymbols&&layer.style.symbol?.type!=='circle'){
+    marker=window.GISPointSymbols.marker(L(),layer,f,[g.coordinates[1],g.coordinates[0]]);
+   }else{
+    var icon=el('span','ms-cluster-symbol');icon.style.backgroundColor=layer.style.fill;
+    icon.style.borderColor=layer.style.color;
+    marker=L().marker([g.coordinates[1],g.coordinates[0]],{
      icon:L().divIcon({html:icon,className:'ms-cluster-icon',iconSize:[20,20],iconAnchor:[10,10]}),
      pane:paneName(layer)});
+   }
    marker.on('click',()=>selectedProps(s,layer,f));featureTooltip(layer,f,marker);group.addLayer(marker);
   });
   layer.render=group.addTo(s.map);
  }else{
   layer.render=L().geoJSON({type:'FeatureCollection',features:features},{
    pane:paneName(layer),style:f=>vectorOpts(layer,f),
-   pointToLayer:(f,latlng)=>L().circleMarker(latlng,Object.assign({},vectorOpts(layer,f),{radius:layer.style.radius})),
+   pointToLayer:(f,latlng)=>window.GISPointSymbols&&pointLayer
+     ?window.GISPointSymbols.marker(L(),layer,f,latlng)
+     :L().circleMarker(latlng,Object.assign({},vectorOpts(layer,f),{radius:layer.style.radius})),
    onEachFeature:(f,shape)=>{
     shape.on('click',ev=>{if(ev.originalEvent)L().DomEvent.stopPropagation(ev);selectedProps(s,layer,f);});
     featureTooltip(layer,f,shape);
@@ -375,7 +383,12 @@ function removeLayer(s,layer){
 async function addLayer(s,url,options){
  if(s.layers.length>=MAX_LAYERS)throw Error('Limit of '+MAX_LAYERS+' layers per map. Remove a layer first.');
  var target=normalizeUrl(url);
- if(target.layerId===null){await browse(s,target.root);return;}
+ if(target.layerId===null){
+  if(window.GISServiceImport){
+   await window.GISServiceImport.pick(s,target.root,s.servicePickHost||s.browseBox||s.panelContent);
+  }else await browse(s,target.root);
+  return null;
+ }
  if(s.layers.some(x=>x.url===target.url)){s.selected=s.layers.find(x=>x.url===target.url);s.panel='style';renderPanel(s);return;}
  var meta=await readMeta(s,target.url);
  if(!meta.geometryType||meta.type==='Table'||meta.type==='Group Layer')throw Error('Choose a spatial ArcGIS feature layer, not a table or group layer.');
@@ -524,6 +537,7 @@ function showStyle(s){
   else renderFeatures(s,layer);
  },{min:.1,max:1,step:.05});
  p.appendChild(controls);
+ if(point&&window.GISPointSymbols)window.GISPointSymbols.picker(s,p,layer,()=>renderFeatures(s,layer));
  var lab=el('section','ms-label-editor');
  var toggle=el('label','ms-toggle'),cb=el('input');cb.type='checkbox';cb.checked=layer.labelVisible;cb.disabled=layer.drawMode==='image'||layer.pointMode==='heat';
  cb.addEventListener('change',()=>{
@@ -572,6 +586,7 @@ function showAdd(s){
   finally{button.disabled=false;}
  });
  var submit=btn('Add URL','ms-primary');submit.type='submit';add(form,input,submit);p.appendChild(form);
+ var pickerHost=el('section','ms-import-picker');s.servicePickHost=pickerHost;p.appendChild(pickerHost);
  p.appendChild(el('div','ms-divider'));
  var browseBox=el('div','ms-browse');p.appendChild(browseBox);s.browseBox=browseBox;
  var current=baseService(C().state.url);
@@ -863,6 +878,6 @@ async function restoreSaved(s){
  if(window.GISPowerTools){s.annotations=Array.isArray(conf.annotations)?conf.annotations.slice(0,300):[];window.GISPowerTools.drawLayer(s);}
  renderPanel(s);
 }
-window.GISMapStudio={mount,cleanup:cleanUp,api:{renderFeatures,renderPanel,queryServer,layerWhere,addLayer,browse,actionPane},refresh:()=>{if(session)refresh(session);},
+window.GISMapStudio={mount,cleanup:cleanUp,api:{renderFeatures,renderPanel,queryServer,layerWhere,addLayer,browse,readMeta,baseService,actionPane},refresh:()=>{if(session)refresh(session);},
  utils:{baseService,validStyle,makeLayer,BASEMAPS},getState:()=>session};
 })();
